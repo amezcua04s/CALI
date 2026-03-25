@@ -25,6 +25,7 @@ struct OnboardingView: View {
     @State private var backCredentialImage: UIImage?
     @State private var extractedCredentialData = ExtractedCredentialData()
     @State private var isExtractingCredentialData = false
+    @State private var showExtractionSuccessToast = false
     @State private var extractionErrorMessage: String?
     @State private var registrationStatusMessage: String?
     @State private var provisionalPassword = ""
@@ -54,6 +55,7 @@ struct OnboardingView: View {
                         backImage: $backCredentialImage,
                         isExtracting: isExtractingCredentialData,
                         extractionErrorMessage: extractionErrorMessage,
+                        showSuccess: showExtractionSuccessToast,
                         onExtract: extractCredentialData
                     )
                     .tag(1)
@@ -169,11 +171,18 @@ struct OnboardingView: View {
                     if !extracted.generation.isEmpty { generation = extracted.generation }
                     if let career = extracted.career { selectedCareer = career }
                     isExtractingCredentialData = false
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    showExtractionSuccessToast = true
+                    Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 1_200_000_000)
+                        withAnimation { showExtractionSuccessToast = false }
+                    }
                 }
             } catch {
                 await MainActor.run {
                     extractionErrorMessage = error.localizedDescription
                     isExtractingCredentialData = false
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
                 }
             }
         }
@@ -286,6 +295,7 @@ struct CredentialCaptureStep: View {
     @Binding var backImage: UIImage?
     let isExtracting: Bool
     let extractionErrorMessage: String?
+    let showSuccess: Bool
     let onExtract: () -> Void
 
     @State private var activeSide: CredentialSide?
@@ -294,78 +304,115 @@ struct CredentialCaptureStep: View {
     @State private var imageSource: UIImagePickerController.SourceType = .camera
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Escanea tu credencial")
-                        .font(.largeTitle).fontWeight(.bold)
-                    Text("Captura el frente y reverso de tu credencial UNAM. Después extraemos los datos para completar el registro.")
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                CredentialImageCard(
-                    title: "Frente de la credencial",
-                    subtitle: "Asegúrate de que el texto sea legible",
-                    image: frontImage
-                ) {
-                    activeSide = .front
-                    showSourceDialog = true
-                }
-
-                CredentialImageCard(
-                    title: "Reverso de la credencial",
-                    subtitle: "Incluye la parte trasera completa",
-                    image: backImage
-                ) {
-                    activeSide = .back
-                    showSourceDialog = true
-                }
-
-                Button {
-                    onExtract()
-                } label: {
-                    HStack {
-                        if isExtracting {
-                            ProgressView()
-                                .tint(.white)
-                        } else {
-                            Image(systemName: "text.viewfinder")
-                        }
-                        Text(isExtracting ? "Extrayendo datos..." : "Extraer datos de la credencial")
-                            .fontWeight(.semibold)
+        ZStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Escanea tu credencial")
+                            .font(.largeTitle).fontWeight(.bold)
+                        Text("Captura el frente y reverso de tu credencial UNAM. Después extraemos los datos para completar el registro.")
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background((frontImage != nil && backImage != nil) ? Color.green : Color.gray.opacity(0.25))
-                    .foregroundStyle(.white)
-                    .cornerRadius(14)
-                }
-                .disabled(frontImage == nil || backImage == nil || isExtracting)
 
-                if let extractionErrorMessage, !extractionErrorMessage.isEmpty {
-                    Label(extractionErrorMessage, systemImage: "exclamationmark.triangle.fill")
-                        .font(.footnote)
-                        .foregroundStyle(.red)
+                    CredentialImageCard(
+                        title: "Frente de la credencial",
+                        subtitle: "Asegúrate de que el texto sea legible",
+                        image: frontImage,
+                        disabled: isExtracting
+                    ) {
+                        activeSide = .front
+                        showSourceDialog = true
+                    }
+
+                    CredentialImageCard(
+                        title: "Reverso de la credencial",
+                        subtitle: "Incluye la parte trasera completa",
+                        image: backImage,
+                        disabled: isExtracting
+                    ) {
+                        activeSide = .back
+                        showSourceDialog = true
+                    }
+
+                    Button {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        onExtract()
+                    } label: {
+                        HStack {
+                            if isExtracting {
+                                ProgressView()
+                                    .tint(.white)
+                            } else {
+                                Image(systemName: "text.viewfinder")
+                            }
+                            Text(isExtracting ? "Extrayendo datos..." : "Extraer datos de la credencial")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
                         .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.red.opacity(0.08))
+                        .background((frontImage != nil && backImage != nil) ? Color.green : Color.gray.opacity(0.25))
+                        .foregroundStyle(.white)
                         .cornerRadius(14)
-                }
+                    }
+                    .disabled(frontImage == nil || backImage == nil || isExtracting)
 
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Tip")
-                        .font(.headline)
-                    Text("Esta versión usa OCR local con Vision para detectar texto desde la imagen. Después puedes conectar un servicio de IA o backend si quieres validaciones más robustas o envío real del correo.")
+                    if let extractionErrorMessage, !extractionErrorMessage.isEmpty {
+                        Label(extractionErrorMessage, systemImage: "exclamationmark.triangle.fill")
+                            .font(.footnote)
+                            .foregroundStyle(.red)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.red.opacity(0.08))
+                            .cornerRadius(14)
+                    }
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Tip")
+                            .font(.headline)
+                        Text("Esta versión usa OCR local con Vision para detectar texto desde la imagen. Después puedes conectar un servicio de IA o backend si quieres validaciones más robustas o envío real del correo.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding()
+                    .background(Color.white)
+                    .cornerRadius(16)
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 32)
+            }
+            .allowsHitTesting(!isExtracting)
+
+            if isExtracting {
+                Color.black.opacity(0.2)
+                    .ignoresSafeArea()
+                VStack(spacing: 12) {
+                    ProgressView()
+                    Text("Extrayendo datos de la credencial...")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 .padding()
-                .background(Color.white)
+                .background(.ultraThinMaterial)
                 .cornerRadius(16)
             }
-            .padding(.horizontal, 24)
-            .padding(.top, 32)
+
+            if showSuccess {
+                VStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 56, weight: .bold))
+                        .foregroundStyle(.green)
+                    Text("Datos extraídos")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.primary)
+                }
+                .padding(20)
+                .background(.ultraThinMaterial)
+                .cornerRadius(18)
+                .shadow(color: .black.opacity(0.2), radius: 12, x: 0, y: 6)
+                .transition(.scale.combined(with: .opacity))
+            }
         }
         .confirmationDialog("Selecciona una fuente", isPresented: $showSourceDialog, titleVisibility: .visible) {
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
@@ -398,6 +445,7 @@ struct CredentialImageCard: View {
     let title: String
     let subtitle: String
     let image: UIImage?
+    let disabled: Bool
     let action: () -> Void
 
     var body: some View {
@@ -413,6 +461,8 @@ struct CredentialImageCard: View {
                 Spacer()
                 Button(image == nil ? "Capturar" : "Reemplazar", action: action)
                     .font(.subheadline.weight(.semibold))
+                    .disabled(disabled)
+                    .opacity(disabled ? 0.6 : 1)
             }
 
             ZStack {
