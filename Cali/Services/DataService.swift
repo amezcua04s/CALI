@@ -12,177 +12,235 @@ class DataService {
 
     func getSubjects(for careerName: String) -> [Subject] {
         switch careerName {
-        case "Ingeniería en Computación",
-             "Ciencias de la Computación":
-            return computacionSubjects
-        case "Administración",
-             "Contaduría":
+        case "Administración":
             return administracionSubjects
+        case "Contaduría":
+            return contaduriaSubjects
+        case "Informática":
+            return informaticaSubjects
+        case "Negocios Internacionales":
+            return negociosInternacionalesSubjects
         default:
-            return genericSubjects
+            return administracionSubjects
         }
     }
 
-    // When a real API exists, call this instead:
-    // func fetchSubjects(for careerName: String) async throws -> [Subject] { ... }
-
-    // MARK: - Mock datasets
-
-    private var computacionSubjects: [Subject] = [
-        Subject(name: "Cálculo Diferencial e Integral",
-                clave: "1101", credits: 10, semester: 1,
-                professor: "Dr. García Morales",
+    private let contaduriaSubjects: [Subject] = [
+        // TRASLAPE 1: Lunes y Miércoles de 9 a 11
+        Subject(name: "AUDITORÍA INTERNA", clave: "2825", credits: 8, semester: 8, professor: "CERVANTES SIERRA LUZ DEL CARMEN", spots: 60,
                 scheduleSlots: [
-                    ScheduleSlot(day: .lunes,     startHour: 8,  endHour: 10),
-                    ScheduleSlot(day: .miercoles, startHour: 8,  endHour: 10),
-                    ScheduleSlot(day: .viernes,   startHour: 8,  endHour: 9)
-                ], classroom: "P-102"),
-
-        Subject(name: "Álgebra Lineal",
-                clave: "1102", credits: 10, semester: 1,
-                professor: "Dra. López Hernández",
+                    ScheduleSlot(day: .lunes, startHour: 9, endHour: 11),
+                    ScheduleSlot(day: .miercoles, startHour: 9, endHour: 11)
+                ], classroom: "D-005"),
+        
+        Subject(name: "COSTOS ESTRATÉGICOS", clave: "0008", credits: 8, semester: 8, professor: "VASQUEZ COSTA JOSE LUIS", spots: 60,
                 scheduleSlots: [
-                    ScheduleSlot(day: .martes, startHour: 10, endHour: 12),
-                    ScheduleSlot(day: .jueves, startHour: 10, endHour: 12)
-                ], classroom: "P-201"),
+                    ScheduleSlot(day: .lunes, startHour: 9, endHour: 11),
+                    ScheduleSlot(day: .miercoles, startHour: 9, endHour: 11)
+                ], classroom: "D-102"),
 
-        Subject(name: "Introducción a Ciencias de la Computación",
-                clave: "1103", credits: 8, semester: 1,
-                professor: "M.C. Varela Ríos",
+        // TRASLAPE 2: Martes y Jueves de 7 a 9
+        Subject(name: "CONTRIBUCIONES INDIRECTAS", clave: "2826", credits: 8, semester: 8, professor: "MANZANARES VELAZQUEZ IGNACIO", spots: 60,
                 scheduleSlots: [
-                    ScheduleSlot(day: .lunes,  startHour: 12, endHour: 14),
-                    ScheduleSlot(day: .viernes, startHour: 10, endHour: 12)
-                ], classroom: "Lab. A"),
+                    ScheduleSlot(day: .martes, startHour: 7, endHour: 9),
+                    ScheduleSlot(day: .jueves, startHour: 7, endHour: 9)
+                ], classroom: "B-001"),
 
-        Subject(name: "Programación Orientada a Objetos",
-                clave: "1201", credits: 8, semester: 2,
-                professor: "M.C. Rodríguez Pérez",
+        Subject(name: "AUDITORÍA INTERNA", clave: "2825", credits: 8, semester: 8, professor: "ESPINOSA DE LOS MONTEROS JAIME", spots: 60,
                 scheduleSlots: [
-                    ScheduleSlot(day: .lunes,     startHour: 12, endHour: 14),
-                    ScheduleSlot(day: .miercoles, startHour: 12, endHour: 14)
-                ], classroom: "Lab. A"),
+                    ScheduleSlot(day: .martes, startHour: 7, endHour: 9),
+                    ScheduleSlot(day: .jueves, startHour: 7, endHour: 9)
+                ], classroom: "A-204"),
 
-        Subject(name: "Estructuras de Datos y Algoritmos",
-                clave: "1202", credits: 10, semester: 2,
-                professor: "Dr. Martínez Cruz",
+        Subject(name: "FINANZAS CORPORATIVAS", clave: "2827", credits: 8, semester: 8, professor: "ZARATE COLORADO SANTIAGO", spots: 60,
                 scheduleSlots: [
-                    ScheduleSlot(day: .martes,  startHour: 14, endHour: 16),
-                    ScheduleSlot(day: .jueves,  startHour: 14, endHour: 16),
-                    ScheduleSlot(day: .viernes, startHour: 12, endHour: 13)
-                ], classroom: "E-305"),
+                    ScheduleSlot(day: .miercoles, startHour: 11, endHour: 13),
+                    ScheduleSlot(day: .viernes, startHour: 11, endHour: 13)
+                ], classroom: "AULA-B12"),
+        
+        Subject(name: "AUDITORÍA INTERNA", clave: "2825", credits: 8, semester: 8, professor: "LOPEZ CHAVEZ GABRIELA", spots: 60,
+                scheduleSlots: [
+                    ScheduleSlot(day: .lunes, startHour: 11, endHour: 13),
+                    ScheduleSlot(day: .miercoles, startHour: 11, endHour: 13)
+                ], classroom: "D-101"),
 
-        Subject(name: "Matemáticas Discretas",
-                clave: "1203", credits: 8, semester: 2,
-                professor: "Dra. Soto Alvarado",
+        Subject(name: "COSTOS ESTRATÉGICOS", clave: "0008", credits: 8, semester: 8, professor: "HERNANDEZ MENA HIDEKEL ZURIEL", spots: 60,
                 scheduleSlots: [
-                    ScheduleSlot(day: .martes,    startHour: 8,  endHour: 10),
-                    ScheduleSlot(day: .miercoles, startHour: 10, endHour: 12)
-                ], classroom: "P-104"),
+                    ScheduleSlot(day: .lunes, startHour: 7, endHour: 9),
+                    ScheduleSlot(day: .miercoles, startHour: 7, endHour: 9)
+                ], classroom: "B-004"),
 
-        Subject(name: "Sistemas Operativos",
-                clave: "1401", credits: 10, semester: 4,
-                professor: "Dr. Sánchez Vega",
+        Subject(name: "CONTRIBUCIONES INDIRECTAS", clave: "2826", credits: 8, semester: 8, professor: "CANDELAS RAMIREZ EDITH", spots: 60,
                 scheduleSlots: [
-                    ScheduleSlot(day: .lunes,     startHour: 16, endHour: 18),
-                    ScheduleSlot(day: .miercoles, startHour: 16, endHour: 18)
+                    ScheduleSlot(day: .lunes, startHour: 11, endHour: 13),
+                    ScheduleSlot(day: .miercoles, startHour: 11, endHour: 13)
+                ], classroom: "C-203"),
+
+        Subject(name: "AUDITORÍA INTERNA", clave: "2825", credits: 8, semester: 8, professor: "SANTOS MARTINEZ PATRICIO", spots: 60,
+                scheduleSlots: [
+                    ScheduleSlot(day: .viernes, startHour: 7, endHour: 9),
+                    ScheduleSlot(day: .martes, startHour: 7, endHour: 9)
+                ], classroom: "A-205"),
+
+        Subject(name: "AUDITORÍA INTERNA", clave: "2825", credits: 8, semester: 8, professor: "HERNANDEZ ROMERO MARIA", spots: 60,
+                scheduleSlots: [
+                    ScheduleSlot(day: .jueves, startHour: 9, endHour: 11),
+                    ScheduleSlot(day: .sabado, startHour: 9, endHour: 11)
+                ], classroom: "AULA-04")
+    ]
+
+    private let administracionSubjects: [Subject] = [
+        // TRASLAPE 1: Lunes y Miércoles de 9 a 11
+        Subject(name: "CRÉDITO Y COBRANZAS", clave: "2080", credits: 8, semester: 8, professor: "WOLF DEL VALLE NORMAN", spots: 60,
+                scheduleSlots: [
+                    ScheduleSlot(day: .lunes, startHour: 9, endHour: 11),
+                    ScheduleSlot(day: .miercoles, startHour: 9, endHour: 11)
+                ], classroom: "H-011"),
+
+        Subject(name: "ADMINISTRACIÓN ESTRATÉGICA", clave: "2822", credits: 8, semester: 8, professor: "GUTIERREZ ACOSTA OMAR", spots: 60,
+                scheduleSlots: [
+                    ScheduleSlot(day: .lunes, startHour: 9, endHour: 11),
+                    ScheduleSlot(day: .miercoles, startHour: 9, endHour: 11)
+                ], classroom: "AULA-B12"),
+
+        // TRASLAPE 2: Miércoles y Viernes de 11 a 13
+        Subject(name: "ADMINISTRACIÓN ESTRATÉGICA", clave: "2822", credits: 8, semester: 8, professor: "FRANKLIN FINCOWSKY ENRIQUE", spots: 60,
+                scheduleSlots: [
+                    ScheduleSlot(day: .miercoles, startHour: 11, endHour: 13),
+                    ScheduleSlot(day: .viernes, startHour: 11, endHour: 13)
+                ], classroom: "F-103"),
+
+        Subject(name: "ADMINISTRACIÓN ESTRATÉGICA", clave: "2822", credits: 8, semester: 8, professor: "CISNEROS MONTES SALVADOR", spots: 60,
+                scheduleSlots: [
+                    ScheduleSlot(day: .viernes, startHour: 11, endHour: 13),
+                    ScheduleSlot(day: .miercoles, startHour: 11, endHour: 13)
+                ], classroom: "A-201"),
+
+        Subject(name: "ADMINISTRACIÓN ESTRATÉGICA", clave: "2822", credits: 8, semester: 8, professor: "CANDELAS RAMIREZ EDITH", spots: 60,
+                scheduleSlots: [
+                    ScheduleSlot(day: .martes, startHour: 7, endHour: 9),
+                    ScheduleSlot(day: .jueves, startHour: 7, endHour: 9)
+                ], classroom: "F-102"),
+
+        Subject(name: "PUBLICIDAD", clave: "2085", credits: 8, semester: 8, professor: "PARDO LOPEZ SONIA LUZ", spots: 60,
+                scheduleSlots: [
+                    ScheduleSlot(day: .miercoles, startHour: 7, endHour: 9),
+                    ScheduleSlot(day: .viernes, startHour: 7, endHour: 9)
+                ], classroom: "A-203"),
+
+        Subject(name: "ADMINISTRACIÓN ESTRATÉGICA", clave: "2822", credits: 8, semester: 8, professor: "MERINO YOSHIOKA EDUARDO", spots: 60,
+                scheduleSlots: [
+                    ScheduleSlot(day: .martes, startHour: 9, endHour: 11),
+                    ScheduleSlot(day: .viernes, startHour: 9, endHour: 11)
+                ], classroom: "D-202"),
+
+        Subject(name: "ADMINISTRACIÓN ESTRATÉGICA", clave: "2822", credits: 8, semester: 8, professor: "RUIZ DIAZ CARLOS", spots: 60,
+                scheduleSlots: [
+                    ScheduleSlot(day: .miercoles, startHour: 11, endHour: 13),
+                    ScheduleSlot(day: .lunes, startHour: 11, endHour: 13)
+                ], classroom: "D-002"),
+
+        Subject(name: "ADMINISTRACIÓN ESTRATÉGICA", clave: "2822", credits: 8, semester: 8, professor: "GARCIA FLORES ESTER", spots: 60,
+                scheduleSlots: [
+                    ScheduleSlot(day: .jueves, startHour: 9, endHour: 11),
+                    ScheduleSlot(day: .lunes, startHour: 9, endHour: 11)
+                ], classroom: "F-103"),
+
+        Subject(name: "MARKETING II", clave: "2085", credits: 8, semester: 8, professor: "BARCENA SOBRINO MARIA MARCELA", spots: 60,
+                scheduleSlots: [
+                    ScheduleSlot(day: .lunes, startHour: 9, endHour: 11),
+                    ScheduleSlot(day: .miercoles, startHour: 9, endHour: 11)
+                ], classroom: "H-013")
+    ]
+    
+    private let informaticaSubjects: [Subject] = [
+        // TRASLAPE 1: Lunes y Miércoles de 9 a 11
+        Subject(name: "AUDITORÍA INFORMÁTICA", clave: "2824", credits: 8, semester: 8, professor: "MARTINEZ VENTURA JUAN CARLOS", spots: 30,
+                scheduleSlots: [
+                    ScheduleSlot(day: .lunes, startHour: 9, endHour: 11),
+                    ScheduleSlot(day: .miercoles, startHour: 9, endHour: 11)
+                ], classroom: "AULA-B11"),
+
+        Subject(name: "SERVICIOS DE TECNOLOGÍA", clave: "2828", credits: 8, semester: 8, professor: "HERNANDEZ REYES JORGE ARTURO", spots: 30,
+                scheduleSlots: [
+                    ScheduleSlot(day: .lunes, startHour: 9, endHour: 11),
+                    ScheduleSlot(day: .miercoles, startHour: 9, endHour: 11)
+                ], classroom: "D-203"),
+
+        // TRASLAPE 2: Martes y Jueves de 18 a 20
+        Subject(name: "AUDITORÍA INFORMÁTICA", clave: "2824", credits: 8, semester: 8, professor: "PONCE ROSADO MARCO ANTONIO", spots: 30,
+                scheduleSlots: [
+                    ScheduleSlot(day: .martes, startHour: 18, endHour: 20),
+                    ScheduleSlot(day: .jueves, startHour: 18, endHour: 20)
+                ], classroom: "D-204"),
+
+        Subject(name: "SERVICIOS DE TECNOLOGÍA", clave: "2828", credits: 8, semester: 8, professor: "PONCE ROSADO MARCO ANTONIO", spots: 30,
+                scheduleSlots: [
+                    ScheduleSlot(day: .martes, startHour: 18, endHour: 20),
+                    ScheduleSlot(day: .jueves, startHour: 18, endHour: 20)
+                ], classroom: "D-204"),
+
+        Subject(name: "AUDITORÍA INFORMÁTICA", clave: "2824", credits: 8, semester: 8, professor: "MARTINEZ MONTESINOS DELIA", spots: 30,
+                scheduleSlots: [
+                    ScheduleSlot(day: .martes, startHour: 9, endHour: 11),
+                    ScheduleSlot(day: .jueves, startHour: 9, endHour: 11)
+                ], classroom: "D-107"),
+
+        Subject(name: "AUDITORÍA INFORMÁTICA", clave: "2824", credits: 8, semester: 8, professor: "SOTO PEREZ GABRIEL", spots: 30,
+                scheduleSlots: [
+                    ScheduleSlot(day: .lunes, startHour: 18, endHour: 20),
+                    ScheduleSlot(day: .miercoles, startHour: 18, endHour: 20)
+                ], classroom: "D-202"),
+
+        Subject(name: "SERVICIOS DE TECNOLOGÍA", clave: "2828", credits: 8, semester: 8, professor: "GARCIA RUIZ JOSE MANUEL", spots: 30,
+                scheduleSlots: [
+                    ScheduleSlot(day: .martes, startHour: 7, endHour: 9),
+                    ScheduleSlot(day: .jueves, startHour: 7, endHour: 9)
+                ], classroom: "D-203"),
+
+        Subject(name: "TEMAS SELECTOS INFO", clave: "2830", credits: 8, semester: 8, professor: "MORALES SANCHEZ ELSA", spots: 30,
+                scheduleSlots: [
+                    ScheduleSlot(day: .lunes, startHour: 11, endHour: 13),
+                    ScheduleSlot(day: .miercoles, startHour: 11, endHour: 13)
+                ], classroom: "E-101"),
+
+        Subject(name: "TEMAS SELECTOS INFO", clave: "2830", credits: 8, semester: 8, professor: "RAMIREZ CRUZ FELIPE", spots: 30,
+                scheduleSlots: [
+                    ScheduleSlot(day: .martes, startHour: 16, endHour: 18),
+                    ScheduleSlot(day: .jueves, startHour: 16, endHour: 18)
                 ], classroom: "E-102"),
 
-        Subject(name: "Redes de Computadoras",
-                clave: "1501", credits: 10, semester: 5,
-                professor: "M.I. Flores Torres",
+        Subject(name: "AUDITORÍA INFORMÁTICA", clave: "2824", credits: 8, semester: 8, professor: "GARCIA SILVA MARCO", spots: 30,
                 scheduleSlots: [
-                    ScheduleSlot(day: .martes, startHour: 8,  endHour: 10),
-                    ScheduleSlot(day: .jueves, startHour: 8,  endHour: 10)
-                ], classroom: "Lab. B"),
-
-        Subject(name: "Inteligencia Artificial",
-                clave: "1601", credits: 8, semester: 6,
-                professor: "Dr. Ramírez Luna",
+                    ScheduleSlot(day: .lunes, startHour: 7, endHour: 9),
+                    ScheduleSlot(day: .miercoles, startHour: 7, endHour: 9)
+                ], classroom: "AULA-B11")
+    ]
+    
+    private var negociosInternacionalesSubjects : [Subject] = [
+        Subject(name: "Inglés", clave: "1827", credits: 8, semester: 8, professor: "Barcena Sobrino María Marcela", spots: 60,
                 scheduleSlots: [
-                    ScheduleSlot(day: .lunes,   startHour: 10, endHour: 12),
-                    ScheduleSlot(day: .viernes, startHour: 10, endHour: 12)
-                ], classroom: "P-305"),
-
-        Subject(name: "Bases de Datos",
-                clave: "1602", credits: 10, semester: 6,
-                professor: "Dra. Jiménez Campos",
+                    ScheduleSlot(day: .lunes, startHour: 7, endHour: 9),
+                    ScheduleSlot(day: .miercoles, startHour: 7, endHour: 9)
+                ], classroom: "B-003"),
+        Subject(name: "Inglés", clave: "1827", credits: 8, semester: 8, professor: "Barcena Sobrino María Marcela", spots: 60,
                 scheduleSlots: [
-                    ScheduleSlot(day: .martes, startHour: 12, endHour: 14),
-                    ScheduleSlot(day: .jueves, startHour: 12, endHour: 14)
-                ], classroom: "Lab. C"),
-
-        Subject(name: "Ingeniería de Software",
-                clave: "1701", credits: 10, semester: 7,
-                professor: "M.C. Vargas Mendoza",
+                    ScheduleSlot(day: .lunes, startHour: 7, endHour: 9),
+                    ScheduleSlot(day: .miercoles, startHour: 7, endHour: 9)
+                ], classroom: "C-205"),
+        
+        Subject(name: "Seminario Negocios Internacionales V", clave: "1828", credits: 8, semester: 8, professor: "Jouaen Perez Giselle Solagne", spots: 60,
                 scheduleSlots: [
-                    ScheduleSlot(day: .lunes,     startHour: 18, endHour: 20),
-                    ScheduleSlot(day: .miercoles, startHour: 18, endHour: 20)
-                ], classroom: "E-201", modality: .hibrido),
-
-        Subject(name: "Seguridad en Sistemas",
-                clave: "1702", credits: 8, semester: 7,
-                professor: "Dr. Guerrero Ríos",
+                    ScheduleSlot(day: .lunes, startHour: 9, endHour: 11),
+                    ScheduleSlot(day: .miercoles, startHour: 9, endHour: 11)
+                ], classroom: "B-003"),
+        
+        Subject(name: "Seminario Negocios Internacionales V", clave: "1828", credits: 8, semester: 8, professor: "Gallardo Lopez Antonio", spots: 60,
                 scheduleSlots: [
-                    ScheduleSlot(day: .martes,  startHour: 16, endHour: 18),
-                    ScheduleSlot(day: .viernes, startHour: 14, endHour: 16)
-                ], classroom: "Lab. Seg"),
-
-        Subject(name: "Aprendizaje Automático",
-                clave: "1801", credits: 8, semester: 8,
-                professor: "Dra. Castro Niño",
-                scheduleSlots: [
-                    ScheduleSlot(day: .lunes,     startHour: 14, endHour: 16),
-                    ScheduleSlot(day: .miercoles, startHour: 14, endHour: 16)
-                ], classroom: "Lab. IA", modality: .hibrido),
-
-        Subject(name: "Cómputo en la Nube",
-                clave: "1802", credits: 6, semester: 8,
-                professor: "M.C. Peña Solís",
-                scheduleSlots: [
-                    ScheduleSlot(day: .jueves, startHour: 16, endHour: 19)
-                ], classroom: "Lab. B", modality: .linea)
+                    ScheduleSlot(day: .lunes, startHour: 9, endHour: 11),
+                    ScheduleSlot(day: .miercoles, startHour: 9, endHour: 11)
+                ], classroom: "C-205")
     ]
 
-    private var administracionSubjects: [Subject] = [
-        Subject(name: "Fundamentos de Administración",
-                clave: "A101", credits: 8, semester: 1,
-                professor: "Dra. Torres Medina",
-                scheduleSlots: [
-                    ScheduleSlot(day: .lunes,  startHour: 9,  endHour: 11),
-                    ScheduleSlot(day: .jueves, startHour: 9,  endHour: 11)
-                ], classroom: "AU-201"),
-
-        Subject(name: "Contabilidad Básica",
-                clave: "A102", credits: 8, semester: 1,
-                professor: "M.A. Ruiz Gómez",
-                scheduleSlots: [
-                    ScheduleSlot(day: .martes,  startHour: 11, endHour: 13),
-                    ScheduleSlot(day: .viernes, startHour: 9,  endHour: 11)
-                ], classroom: "AU-105"),
-
-        Subject(name: "Mercadotecnia",
-                clave: "A301", credits: 8, semester: 3,
-                professor: "Lic. Villanueva Cruz",
-                scheduleSlots: [
-                    ScheduleSlot(day: .miercoles, startHour: 13, endHour: 15),
-                    ScheduleSlot(day: .viernes,   startHour: 11, endHour: 13)
-                ], classroom: "AU-302")
-    ]
-
-    private var genericSubjects: [Subject] = [
-        Subject(name: "Introducción a la Carrera",
-                clave: "GEN01", credits: 6, semester: 1,
-                professor: "Por asignar",
-                scheduleSlots: [
-                    ScheduleSlot(day: .lunes, startHour: 10, endHour: 12)
-                ], classroom: "Aula 1"),
-
-        Subject(name: "Metodología de la Investigación",
-                clave: "GEN02", credits: 8, semester: 2,
-                professor: "Dr. Hernández Suárez",
-                scheduleSlots: [
-                    ScheduleSlot(day: .martes, startHour: 10, endHour: 12),
-                    ScheduleSlot(day: .jueves, startHour: 10, endHour: 12)
-                ], classroom: "Aula 2")
-    ]
+    
 }

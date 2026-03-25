@@ -209,6 +209,10 @@ struct SubjectCatalogView: View {
 
     @State private var searchText = ""
     @State private var selectedSemester: Int? = nil
+    @State private var showConflictAlert = false
+    @State private var showMaxSubjectsAlert = false
+    @State private var pendingSubject: Subject? = nil
+    @State private var conflictingSubject: Subject? = nil
 
     private var allSubjects: [Subject] {
         DataService.shared.getSubjects(for: appViewModel.userProfile.career?.name ?? "")
@@ -231,12 +235,60 @@ struct SubjectCatalogView: View {
         appViewModel.selectedSubjects.contains { $0.id == subject.id }
     }
 
+    private func overlaps(_ a: Subject, _ b: Subject) -> Bool {
+        for sa in a.scheduleSlots {
+            for sb in b.scheduleSlots where sa.day == sb.day {
+                // Check hour interval overlap: [start, end)
+                if sa.startHour < sb.endHour && sb.startHour < sa.endHour {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    private func firstConflict(with subject: Subject) -> Subject? {
+        for existing in appViewModel.selectedSubjects {
+            if overlaps(existing, subject) { return existing }
+        }
+        return nil
+    }
+
+    private func canAddMoreSubjects() -> Bool {
+        appViewModel.selectedSubjects.count < 7
+    }
+
     private func toggle(_ subject: Subject) {
         if let idx = appViewModel.selectedSubjects.firstIndex(where: { $0.id == subject.id }) {
+            // If already selected, remove it (toggle off)
             appViewModel.selectedSubjects.remove(at: idx)
-        } else {
-            appViewModel.selectedSubjects.append(subject)
+            appViewModel.saveSubjects()
+            return
         }
+
+        // Enforce maximum of 7 subjects unless we're replacing a conflicting one
+        if !canAddMoreSubjects() {
+            // If full but the new subject would replace an existing one with conflict, we will allow via replace flow.
+            if let conflict = firstConflict(with: subject) {
+                pendingSubject = subject
+                conflictingSubject = conflict
+                showConflictAlert = true
+            } else {
+                showMaxSubjectsAlert = true
+            }
+            return
+        }
+
+        // Check for conflicts
+        if let conflict = firstConflict(with: subject) {
+            pendingSubject = subject
+            conflictingSubject = conflict
+            showConflictAlert = true
+            return
+        }
+
+        // No conflicts and capacity available, add directly
+        appViewModel.selectedSubjects.append(subject)
         appViewModel.saveSubjects()
     }
 
@@ -274,6 +326,43 @@ struct SubjectCatalogView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Listo") { dismiss() }.fontWeight(.semibold)
                 }
+            }
+            .alert("Horario en conflicto", isPresented: $showConflictAlert, presenting: conflictingSubject) { conflict in
+                Button("Reemplazar", role: .destructive) {
+                    if let conflict = conflictingSubject {
+                        // Remove the conflicting subject
+                        if let idx = appViewModel.selectedSubjects.firstIndex(where: { $0.id == conflict.id }) {
+                            appViewModel.selectedSubjects.remove(at: idx)
+                        }
+                        // Attempt to add the pending subject; if still over capacity or conflicts with others, validate again
+                        if let toAdd = pendingSubject {
+                            if let newConflict = firstConflict(with: toAdd) {
+                                // If another conflict exists, keep prompting until user resolves or cancel
+                                conflictingSubject = newConflict
+                                showConflictAlert = true
+                            } else if canAddMoreSubjects() {
+                                appViewModel.selectedSubjects.append(toAdd)
+                                appViewModel.saveSubjects()
+                                pendingSubject = nil
+                                conflictingSubject = nil
+                            } else {
+                                // Capacity reached
+                                showMaxSubjectsAlert = true
+                            }
+                        }
+                    }
+                }
+                Button("Cancelar", role: .cancel) {
+                    pendingSubject = nil
+                    conflictingSubject = nil
+                }
+            } message: { conflict in
+                Text("La materia seleccionada se traslapa con: \(conflict.name). ¿Deseas reemplazarla?")
+            }
+            .alert("Límite de materias", isPresented: $showMaxSubjectsAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Solo puedes agregar hasta 7 materias en tu horario.")
             }
         }
     }

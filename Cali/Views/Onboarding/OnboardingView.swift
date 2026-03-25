@@ -1,6 +1,6 @@
 import SwiftUI
 import UIKit
-import Vision
+@preconcurrency import Vision
 
 // MARK: - OnboardingView
 // Registro guiado: Bienvenida → Credencial → Datos personales → Semestre

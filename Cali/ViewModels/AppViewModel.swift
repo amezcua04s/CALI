@@ -1,8 +1,6 @@
 import SwiftUI
 import Combine
 
-// MARK: - ChatMessage
-
 struct ChatMessage: Identifiable {
     let id = UUID()
     let role: Role
@@ -15,12 +13,9 @@ struct ChatMessage: Identifiable {
     }
 }
 
-// MARK: - AppViewModel
-
 @MainActor
 class AppViewModel: ObservableObject {
 
-    // MARK: Persistence keys
     private enum Keys {
         static let userProfile           = "userProfile"
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
@@ -29,7 +24,6 @@ class AppViewModel: ObservableObject {
         static let selectedSubjects      = "selectedSubjects"
     }
 
-    // MARK: Published state
     @Published var userProfile: UserProfile
     @Published var hasCompletedOnboarding: Bool
     @Published var showQuestionnaire: Bool = false
@@ -40,9 +34,8 @@ class AppViewModel: ObservableObject {
 
     private let aiService = AICompanionService()
 
-    // MARK: Init
     init() {
-        // Restore profile
+
         if let data = UserDefaults.standard.data(forKey: Keys.userProfile),
            let profile = try? JSONDecoder().decode(UserProfile.self, from: data) {
             self.userProfile = profile
@@ -52,7 +45,6 @@ class AppViewModel: ObservableObject {
 
         self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: Keys.hasCompletedOnboarding)
 
-        // Restore checklist
         if let data = UserDefaults.standard.data(forKey: Keys.checklistItems),
            let items = try? JSONDecoder().decode([ChecklistItem].self, from: data) {
             self.checklistItems = items
@@ -60,7 +52,6 @@ class AppViewModel: ObservableObject {
             self.checklistItems = ChecklistItem.defaultItems
         }
 
-        // Restore subjects
         if let data = UserDefaults.standard.data(forKey: Keys.selectedSubjects),
            let subjects = try? JSONDecoder().decode([Subject].self, from: data) {
             self.selectedSubjects = subjects
@@ -68,7 +59,6 @@ class AppViewModel: ObservableObject {
             self.selectedSubjects = []
         }
 
-        // Schedule questionnaire if not yet seen
         if hasCompletedOnboarding && !UserDefaults.standard.bool(forKey: Keys.hasSeenQuestionnaire) {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
                 self?.showQuestionnaire = true
@@ -76,19 +66,15 @@ class AppViewModel: ObservableObject {
         }
     }
 
-    // MARK: Onboarding
 
     func completeOnboarding() {
         hasCompletedOnboarding = true
         UserDefaults.standard.set(true, forKey: Keys.hasCompletedOnboarding)
         saveProfile()
-        // Show questionnaire after a brief delay once the main UI loads
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             self?.showQuestionnaire = true
         }
     }
-
-    // MARK: Persistence
 
     func saveProfile() {
         if let data = try? JSONEncoder().encode(userProfile) {
@@ -108,8 +94,6 @@ class AppViewModel: ObservableObject {
         }
     }
 
-    // MARK: Questionnaire
-
     func dismissQuestionnaire() {
         showQuestionnaire = false
         UserDefaults.standard.set(true, forKey: Keys.hasSeenQuestionnaire)
@@ -120,8 +104,6 @@ class AppViewModel: ObservableObject {
         saveProfile()
         dismissQuestionnaire()
     }
-
-    // MARK: Checklist helpers
 
     func toggleChecklistItem(_ item: ChecklistItem) {
         guard let index = checklistItems.firstIndex(where: { $0.id == item.id }) else { return }

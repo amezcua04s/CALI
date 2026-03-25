@@ -1,18 +1,10 @@
 import Foundation
 
-// MARK: - AICompanionService
-// Uses Apple Intelligence (FoundationModels) — requires iOS 18.1+ with Apple Intelligence enabled.
-// Falls back to rule-based responses on unsupported devices.
 
-#if canImport(FoundationModels)
 import FoundationModels
-#endif
 
 class AICompanionService {
 
-    // MARK: - Private session wrapper
-
-    #if canImport(FoundationModels)
     private var session: LanguageModelSession?
 
     private let systemInstructions = """
@@ -23,39 +15,30 @@ class AICompanionService {
         duda académica. Responde siempre en español, sé conciso (máximo 3 párrafos), cálido, \
         y usa emojis ocasionalmente para hacer la conversación amigable.
         """
-    #endif
 
     init() {
         setupSession()
     }
 
     private func setupSession() {
-        #if canImport(FoundationModels)
         let model = SystemLanguageModel.default
         guard case .available = model.availability else {
             session = nil
             return
         }
         session = LanguageModelSession(instructions: systemInstructions)
-        #endif
     }
 
-    // MARK: - Public interface
-
     func respond(to userMessage: String, context: String) async throws -> String {
-        #if canImport(FoundationModels)
         if let session {
-            // Prepend context snapshot as a brief system note
+
             let prompt = "[\(context)]\n\nAlumno: \(userMessage)"
             let response = try await session.respond(to: prompt)
             return response.content
         }
-        #endif
         // Fallback when Apple Intelligence is unavailable
         return fallbackResponse(for: userMessage)
     }
-
-    // MARK: - Rule-based fallback
 
     private func fallbackResponse(for message: String) -> String {
         let msg = message.lowercased()

@@ -52,7 +52,6 @@ struct ChecklistItem: Identifiable, Codable {
     }
 }
 
-// MARK: - Default UNAM Checklist
 
 extension ChecklistItem {
     static let defaultItems: [ChecklistItem] = [
@@ -103,13 +102,8 @@ extension ChecklistItem {
         ChecklistItem(
             title: "Pago de derechos de examen",
             description: "Cubrir los derechos del examen profesional",
-            category: .administrativo
-        ),
-        ChecklistItem(
-            title: "Examen Médico",
-            description: "Examen médico en clínica universitaria",
             category: .administrativo,
-            requiredForGraduation: false
-        )
+            requiredForGraduation: false)
+        
     ]
 }
