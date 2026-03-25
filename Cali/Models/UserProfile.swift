@@ -6,6 +6,7 @@ struct UserProfile: Codable {
     var name: String
     var lastName: String
     var studentNumber: String
+    var generation: String
     var career: Career?
     var currentSemester: Int
     var email: String
@@ -15,6 +16,7 @@ struct UserProfile: Codable {
         name: String = "",
         lastName: String = "",
         studentNumber: String = "",
+        generation: String = "",
         career: Career? = nil,
         currentSemester: Int = 1,
         email: String = ""
@@ -22,6 +24,7 @@ struct UserProfile: Codable {
         self.name = name
         self.lastName = lastName
         self.studentNumber = studentNumber
+        self.generation = generation
         self.career = career
         self.currentSemester = currentSemester
         self.email = email

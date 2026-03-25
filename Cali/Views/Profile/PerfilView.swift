@@ -49,10 +49,10 @@ struct PerfilView: View {
                     HStack(spacing: 12) {
                         ProfileStat(value: "\(appViewModel.userProfile.currentSemester)°",
                                     label: "Semestre", icon: "calendar", color: .blue)
-                        ProfileStat(value: "\(Int(appViewModel.completionPercentage))%",
-                                    label: "Titulación", icon: "chart.bar.fill", color: .green)
-                        ProfileStat(value: "\(appViewModel.selectedSubjects.count)",
-                                    label: "Materias", icon: "books.vertical", color: .orange)
+                        ProfileStat(value: appViewModel.userProfile.studentNumber.isEmpty ? "—" : appViewModel.userProfile.studentNumber,
+                                    label: "Cuenta", icon: "number", color: .purple)
+                        ProfileStat(value: appViewModel.userProfile.generation.isEmpty ? "—" : appViewModel.userProfile.generation,
+                                    label: "Generación", icon: "graduationcap.fill", color: .orange)
                     }
                     .padding(.horizontal)
 
