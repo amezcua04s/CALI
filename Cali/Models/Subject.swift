@@ -8,8 +8,8 @@ struct Subject: Identifiable, Codable, Hashable {
     let clave: String
     let credits: Int
     let semester: Int
-    let professor: String
     let spots : Int
+    let professor: String
     let scheduleSlots: [ScheduleSlot]
     let classroom: String
     let modality: SubjectModality
@@ -20,8 +20,8 @@ struct Subject: Identifiable, Codable, Hashable {
         clave: String,
         credits: Int,
         semester: Int,
-        professor: String,
         spots: Int,
+        professor: String,
         scheduleSlots: [ScheduleSlot],
         classroom: String,
         modality: SubjectModality = .presencial
@@ -31,8 +31,8 @@ struct Subject: Identifiable, Codable, Hashable {
         self.clave = clave
         self.credits = credits
         self.semester = semester
-        self.professor = professor
         self.spots = spots
+        self.professor = professor
         self.scheduleSlots = scheduleSlots
         self.classroom = classroom
         self.modality = modality

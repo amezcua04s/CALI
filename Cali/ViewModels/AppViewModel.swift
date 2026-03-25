@@ -1,6 +1,8 @@
 import SwiftUI
 import Combine
 
+// MARK: - ChatMessage
+
 struct ChatMessage: Identifiable {
     let id = UUID()
     let role: Role
@@ -13,16 +15,26 @@ struct ChatMessage: Identifiable {
     }
 }
 
+// MARK: - AppViewModel
+
 @MainActor
 class AppViewModel: ObservableObject {
 
+    // MARK: Persistence keys
+
     private enum Keys {
-        static let userProfile           = "userProfile"
+        static let userProfile            = "userProfile"
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
-        static let hasSeenQuestionnaire  = "hasSeenQuestionnaire"
-        static let checklistItems        = "checklistItems"
-        static let selectedSubjects      = "selectedSubjects"
+        static let hasSeenQuestionnaire   = "hasSeenQuestionnaire"
+        static let checklistItems         = "checklistItems"
+        static let selectedSubjects       = "selectedSubjects"
+        static let graduationOption       = "graduationOption"
+        static let revisionCount          = "revisionCount"
+        static let fechaInscripcion       = "fechaInscripcion"
+        static let diplomadoLugar         = "diplomadoLugar"
     }
+
+    // MARK: Published state
 
     @Published var userProfile: UserProfile
     @Published var hasCompletedOnboarding: Bool
@@ -32,49 +44,159 @@ class AppViewModel: ObservableObject {
     @Published var chatMessages: [ChatMessage] = []
     @Published var isAIThinking: Bool = false
 
-    private let aiService = AICompanionService()
+    // MARK: Graduation settings (didSet NOT called during init)
 
-    init() {
-
-        if let data = UserDefaults.standard.data(forKey: Keys.userProfile),
-           let profile = try? JSONDecoder().decode(UserProfile.self, from: data) {
-            self.userProfile = profile
-        } else {
-            self.userProfile = UserProfile()
-        }
-
-        self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: Keys.hasCompletedOnboarding)
-
-        if let data = UserDefaults.standard.data(forKey: Keys.checklistItems),
-           let items = try? JSONDecoder().decode([ChecklistItem].self, from: data) {
-            self.checklistItems = items
-        } else {
-            self.checklistItems = ChecklistItem.defaultItems
-        }
-
-        if let data = UserDefaults.standard.data(forKey: Keys.selectedSubjects),
-           let subjects = try? JSONDecoder().decode([Subject].self, from: data) {
-            self.selectedSubjects = subjects
-        } else {
-            self.selectedSubjects = []
-        }
-
-        if hasCompletedOnboarding && !UserDefaults.standard.bool(forKey: Keys.hasSeenQuestionnaire) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-                self?.showQuestionnaire = true
-            }
-        }
+    @Published var selectedGraduationOption: ChecklistItem.GraduationOption? {
+        didSet { saveGraduationSettings(); regenerateChecklist() }
+    }
+    @Published var revisionCount: Int = 2 {
+        didSet { saveGraduationSettings(); regenerateChecklist() }
+    }
+    @Published var fechaInscripcion: String = "" {
+        didSet { saveGraduationSettings(); regenerateChecklist() }
+    }
+    @Published var diplomadoLugar: String = "" {
+        didSet { saveGraduationSettings(); regenerateChecklist() }
     }
 
+    private let aiService = AICompanionService()
+
+    // MARK: Init
+        init() {
+            // 1. Extraer datos a variables locales primero
+            let profile: UserProfile
+            if let data = UserDefaults.standard.data(forKey: Keys.userProfile),
+               let decoded = try? JSONDecoder().decode(UserProfile.self, from: data) {
+                profile = decoded
+            } else {
+                profile = UserProfile()
+            }
+
+            let onboarding = UserDefaults.standard.bool(forKey: Keys.hasCompletedOnboarding)
+
+            let subjects: [Subject]
+            if let data = UserDefaults.standard.data(forKey: Keys.selectedSubjects),
+               let decoded = try? JSONDecoder().decode([Subject].self, from: data) {
+                subjects = decoded
+            } else {
+                subjects = []
+            }
+
+            let savedOption = UserDefaults.standard.string(forKey: Keys.graduationOption)
+                .flatMap { ChecklistItem.GraduationOption(rawValue: $0) }
+
+            let savedRC = UserDefaults.standard.integer(forKey: Keys.revisionCount)
+            let finalRC = (savedRC == 0) ? 2 : savedRC
+
+            let fecha = UserDefaults.standard.string(forKey: Keys.fechaInscripcion) ?? ""
+            let lugar = UserDefaults.standard.string(forKey: Keys.diplomadoLugar)   ?? ""
+
+            let savedItems: [ChecklistItem]
+            if let data = UserDefaults.standard.data(forKey: Keys.checklistItems),
+               let items = try? JSONDecoder().decode([ChecklistItem].self, from: data) {
+                savedItems = items
+            } else {
+                savedItems = []
+            }
+
+            // 2. Inicializar todas las propiedades (ahora el compilador está feliz)
+            self.userProfile = profile
+            self.hasCompletedOnboarding = onboarding
+            self.selectedSubjects = subjects
+            self.selectedGraduationOption = savedOption
+            self.revisionCount = finalRC
+            self.fechaInscripcion = fecha
+            self.diplomadoLugar = lugar
+
+            // 3. Ahora sí podemos usar lógica para el checklist
+            let isNI = profile.career?.name == "Negocios Internacionales"
+            
+            self.checklistItems = AppViewModel.buildChecklist(
+                from: savedItems,
+                isNegociosInternacionales: isNI,
+                option: savedOption,
+                revisionCount: finalRC,
+                fechaInscripcion: fecha,
+                diplomadoLugar: lugar
+            )
+
+            // 4. Programar tareas posteriores
+            if onboarding && !UserDefaults.standard.bool(forKey: Keys.hasSeenQuestionnaire) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                    self?.showQuestionnaire = true
+                }
+            }
+        }
+    // MARK: - Checklist Regeneration
+
+    /// Builds a checklist preserving completion state (matched by title).
+    private static func buildChecklist(
+        from saved: [ChecklistItem],
+        isNegociosInternacionales: Bool,
+        option: ChecklistItem.GraduationOption?,
+        revisionCount: Int,
+        fechaInscripcion: String,
+        diplomadoLugar: String
+    ) -> [ChecklistItem] {
+        // Map previous completion state by title
+        var completedTitles = Set(saved.filter { $0.isCompleted }.map { $0.title })
+
+        // Section 1
+        var result = ChecklistItem.obligatorioItems(isNegociosInternacionales: isNegociosInternacionales)
+        for i in result.indices {
+            result[i].isCompleted = completedTitles.contains(result[i].title)
+        }
+
+        // Section 2
+        if let opt = option {
+            var modal = ChecklistItem.modalidadItems(
+                option: opt,
+                revisionCount: revisionCount,
+                fechaInscripcion: fechaInscripcion,
+                diplomadoLugar: diplomadoLugar
+            )
+            for i in modal.indices {
+                modal[i].isCompleted = completedTitles.contains(modal[i].title)
+            }
+            result += modal
+        }
+
+        return result
+    }
+
+    /// Rebuilds checklistItems preserving current completion state.
+    func regenerateChecklist() {
+        checklistItems = AppViewModel.buildChecklist(
+            from: checklistItems,
+            isNegociosInternacionales: isNegociosInternacionales,
+            option: selectedGraduationOption,
+            revisionCount: revisionCount,
+            fechaInscripcion: fechaInscripcion,
+            diplomadoLugar: diplomadoLugar
+        )
+        saveChecklist()
+    }
+
+    // MARK: - Computed helpers
+
+    var isNegociosInternacionales: Bool {
+        userProfile.career?.name == "Negocios Internacionales"
+    }
+
+    // MARK: - Onboarding
 
     func completeOnboarding() {
         hasCompletedOnboarding = true
         UserDefaults.standard.set(true, forKey: Keys.hasCompletedOnboarding)
         saveProfile()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+        // Rebuild checklist now that career is known
+        regenerateChecklist()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
             self?.showQuestionnaire = true
         }
     }
+
+    // MARK: - Persistence
 
     func saveProfile() {
         if let data = try? JSONEncoder().encode(userProfile) {
@@ -94,6 +216,19 @@ class AppViewModel: ObservableObject {
         }
     }
 
+    private func saveGraduationSettings() {
+        if let opt = selectedGraduationOption {
+            UserDefaults.standard.set(opt.rawValue, forKey: Keys.graduationOption)
+        } else {
+            UserDefaults.standard.removeObject(forKey: Keys.graduationOption)
+        }
+        UserDefaults.standard.set(revisionCount,    forKey: Keys.revisionCount)
+        UserDefaults.standard.set(fechaInscripcion, forKey: Keys.fechaInscripcion)
+        UserDefaults.standard.set(diplomadoLugar,   forKey: Keys.diplomadoLugar)
+    }
+
+    // MARK: - Questionnaire
+
     func dismissQuestionnaire() {
         showQuestionnaire = false
         UserDefaults.standard.set(true, forKey: Keys.hasSeenQuestionnaire)
@@ -104,6 +239,8 @@ class AppViewModel: ObservableObject {
         saveProfile()
         dismissQuestionnaire()
     }
+
+    // MARK: - Checklist helpers
 
     func toggleChecklistItem(_ item: ChecklistItem) {
         guard let index = checklistItems.firstIndex(where: { $0.id == item.id }) else { return }
@@ -118,7 +255,7 @@ class AppViewModel: ObservableObject {
         return Double(completed.count) / Double(required.count) * 100
     }
 
-    // MARK: AI Chat
+    // MARK: - AI Chat
 
     func sendMessage(_ text: String) async {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -144,20 +281,27 @@ class AppViewModel: ObservableObject {
             ctx += "Estudia \(career.name) en \(career.faculty). "
             ctx += "Está en el semestre \(userProfile.currentSemester) de \(career.durationSemesters). "
         }
+        if let opt = selectedGraduationOption {
+            ctx += "Su modalidad de titulación es: \(opt.rawValue). "
+        }
         let done = checklistItems.filter { $0.isCompleted }.map { $0.title }.joined(separator: ", ")
         if !done.isEmpty { ctx += "Ya completó: \(done). " }
         ctx += "Responde en español, sé conciso (máx 3 párrafos) y usa emojis ocasionalmente."
         return ctx
     }
 
-    // MARK: Reset (debug / re-onboard)
+    // MARK: - Reset (debug / re-onboard)
 
     func resetApp() {
         [Keys.userProfile, Keys.hasCompletedOnboarding,
-         Keys.hasSeenQuestionnaire, Keys.checklistItems, Keys.selectedSubjects]
+         Keys.hasSeenQuestionnaire, Keys.checklistItems, Keys.selectedSubjects,
+         Keys.graduationOption, Keys.revisionCount, Keys.fechaInscripcion, Keys.diplomadoLugar]
             .forEach { UserDefaults.standard.removeObject(forKey: $0) }
         userProfile = UserProfile()
-        checklistItems = ChecklistItem.defaultItems
+        selectedGraduationOption = nil   // didSet will call regenerateChecklist
+        revisionCount = 2
+        fechaInscripcion = ""
+        diplomadoLugar = ""
         selectedSubjects = []
         chatMessages = []
         hasCompletedOnboarding = false

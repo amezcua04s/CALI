@@ -1,34 +1,80 @@
 import SwiftUI
 
 // MARK: - ChecklistView
-// Smart checklist for UNAM graduation requirements.
 
 struct ChecklistView: View {
     @EnvironmentObject var appViewModel: AppViewModel
     @Environment(\.dismiss) var dismiss
 
-    private var grouped: [ChecklistItem.ChecklistCategory: [ChecklistItem]] {
-        Dictionary(grouping: appViewModel.checklistItems, by: { $0.category })
+    private var obligatorioItems: [ChecklistItem] {
+        appViewModel.checklistItems.filter { $0.section == .obligatoria }
+    }
+    private var modalidadItems: [ChecklistItem] {
+        appViewModel.checklistItems.filter { $0.section == .modalidad }
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    // Progress overview
+
+                    // ── Tarjeta de progreso ───────────────────────────────
                     ChecklistProgressCard(
                         percentage: appViewModel.completionPercentage,
                         items: appViewModel.checklistItems
                     )
                     .padding(.horizontal)
 
-                    // Category sections
-                    ForEach(ChecklistItem.ChecklistCategory.allCases, id: \.self) { cat in
-                        if let items = grouped[cat], !items.isEmpty {
-                            ChecklistCategorySection(category: cat, items: items)
-                                .padding(.horizontal)
+                    // ── SECCIÓN 1: Requisitos Obligatorios ────────────────
+                    ChecklistSectionBlock(
+                        title: "Requisitos Obligatorios",
+                        icon: "list.bullet.clipboard",
+                        items: obligatorioItems
+                    )
+                    .padding(.horizontal)
+
+                    // ── SECCIÓN 2: Modalidad de Titulación ────────────────
+                    VStack(alignment: .leading, spacing: 14) {
+
+                        // Encabezado
+                        HStack {
+                            Image(systemName: "graduationcap")
+                                .foregroundStyle(.blue)
+                            Text("Modalidad de Titulación")
+                                .font(.headline)
+                            Spacer()
+                            if !modalidadItems.isEmpty {
+                                Text("\(modalidadItems.filter { $0.isCompleted }.count)/\(modalidadItems.count)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        // Picker horizontal de opciones
+                        GraduationOptionPicker()
+
+                        // Configuración dinámica (fecha / revisiones / lugar)
+                        if appViewModel.selectedGraduationOption != nil {
+                            ModalidadConfigSection()
+                        }
+
+                        // Items de la modalidad elegida
+                        if !modalidadItems.isEmpty {
+                            VStack(spacing: 8) {
+                                ForEach(modalidadItems) { item in
+                                    ChecklistItemRow(item: item)
+                                }
+                            }
+                        } else if appViewModel.selectedGraduationOption == nil {
+                            Text("Selecciona una modalidad para ver tus pasos")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity)
+                                .multilineTextAlignment(.center)
+                                .padding(.vertical, 18)
                         }
                     }
+                    .padding(.horizontal)
                 }
                 .padding(.vertical)
             }
@@ -37,14 +83,217 @@ struct ChecklistView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Listo") { dismiss() }.fontWeight(.semibold)
+                    Button("Listo") { dismiss() }
+                        .fontWeight(.semibold)
                 }
             }
         }
     }
 }
 
-// MARK: - Progress Overview Card
+// MARK: - Sección Block (reutilizable)
+
+struct ChecklistSectionBlock: View {
+    @EnvironmentObject var appViewModel: AppViewModel
+    let title: String
+    let icon: String
+    let items: [ChecklistItem]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundStyle(.blue)
+                Text(title)
+                    .font(.headline)
+                Spacer()
+                Text("\(items.filter { $0.isCompleted }.count)/\(items.count)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            VStack(spacing: 8) {
+                ForEach(items) { item in
+                    ChecklistItemRow(item: item)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Picker horizontal de modalidad
+
+struct GraduationOptionPicker: View {
+    @EnvironmentObject var appViewModel: AppViewModel
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(ChecklistItem.GraduationOption.allCases, id: \.self) { opt in
+                    let isSelected = appViewModel.selectedGraduationOption == opt
+
+                    Button {
+                        withAnimation(.spring(duration: 0.28)) {
+                            // Tocar la opción activa la deselecciona
+                            appViewModel.selectedGraduationOption = isSelected ? nil : opt
+                        }
+                    } label: {
+                        VStack(spacing: 6) {
+                            Image(systemName: opt.icon)
+                                .font(.title3)
+                            Text(opt.rawValue)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .multilineTextAlignment(.center)
+                                .lineLimit(2)
+                        }
+                        .frame(width: 96)
+                        .padding(.vertical, 12)
+                        .background(isSelected ? Color.blue : Color.white)
+                        .foregroundStyle(isSelected ? Color.white : Color.primary)
+                        .cornerRadius(14)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(
+                                    isSelected ? Color.blue : Color.gray.opacity(0.2),
+                                    lineWidth: 1
+                                )
+                        )
+                        .shadow(color: isSelected ? Color.blue.opacity(0.2) : .clear,
+                                radius: 4, x: 0, y: 2)
+                    }
+                }
+            }
+            .padding(.vertical, 4)
+            .padding(.horizontal, 2)
+        }
+    }
+}
+
+// MARK: - Config dinámica de la modalidad
+
+struct ModalidadConfigSection: View {
+    @EnvironmentObject var appViewModel: AppViewModel
+
+    var body: some View {
+        if let opt = appViewModel.selectedGraduationOption {
+            VStack(alignment: .leading, spacing: 12) {
+                switch opt {
+
+                case .tesis:
+                    RevisionStepper(
+                        label: "Número de revisiones de tesina",
+                        value: $appViewModel.revisionCount
+                    )
+
+                case .examenConocimientos:
+                    DateInputField(
+                        label: "Fecha límite de inscripción",
+                        placeholder: "ej. 15 de abril de 2026",
+                        text: $appViewModel.fechaInscripcion
+                    )
+
+                case .diplomado:
+                    DateInputField(
+                        label: "Fecha límite de inscripción",
+                        placeholder: "ej. 10 de mayo de 2026",
+                        text: $appViewModel.fechaInscripcion
+                    )
+                    PlaceInputField(text: $appViewModel.diplomadoLugar)
+
+                case .promedio:
+                    Label(
+                        "Asegúrate de tener promedio ≥ 9.5 y ser alumno regular.",
+                        systemImage: "info.circle"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                case .proyecto:
+                    RevisionStepper(
+                        label: "Número de revisiones del proyecto",
+                        value: $appViewModel.revisionCount
+                    )
+                }
+            }
+            .padding(14)
+            .background(Color.blue.opacity(0.05))
+            .cornerRadius(14)
+        }
+    }
+}
+
+// MARK: - Sub-componentes de config
+
+private struct RevisionStepper: View {
+    let label: String
+    @Binding var value: Int
+
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer()
+            HStack(spacing: 14) {
+                Button {
+                    if value > 1 { value -= 1 }
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(value > 1 ? Color.blue : Color.gray.opacity(0.4))
+                }
+                .disabled(value <= 1)
+
+                Text("\(value)")
+                    .font(.headline)
+                    .frame(width: 28)
+
+                Button {
+                    if value < 10 { value += 1 }
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(value < 10 ? Color.blue : Color.gray.opacity(0.4))
+                }
+                .disabled(value >= 10)
+            }
+        }
+    }
+}
+
+private struct DateInputField: View {
+    let label: String
+    let placeholder: String
+    @Binding var text: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            TextField(placeholder, text: $text)
+                .textFieldStyle(.roundedBorder)
+                .submitLabel(.done)
+        }
+    }
+}
+
+private struct PlaceInputField: View {
+    @Binding var text: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Lugar de entrega de papeles")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            TextField("ej. Sala de Titulación, Edificio A", text: $text)
+                .textFieldStyle(.roundedBorder)
+                .submitLabel(.done)
+        }
+    }
+}
+
+// MARK: - Progress Card
 
 struct ChecklistProgressCard: View {
     let percentage: Double
@@ -58,18 +307,18 @@ struct ChecklistProgressCard: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Tu progreso").font(.headline)
-                    Text("\(completedRequired) de \(totalRequired) requisitos obligatorios")
-                        .font(.subheadline).foregroundStyle(.secondary)
+                    Text("\(completedRequired) de \(totalRequired) pasos completados")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
                 Spacer()
-                // Circular progress
+
                 ZStack {
                     Circle()
                         .stroke(Color.gray.opacity(0.18), lineWidth: 7)
                     Circle()
                         .trim(from: 0, to: percentage / 100)
-                        .stroke(Color.blue,
-                                style: StrokeStyle(lineWidth: 7, lineCap: .round))
+                        .stroke(Color.blue, style: StrokeStyle(lineWidth: 7, lineCap: .round))
                         .rotationEffect(.degrees(-90))
                         .animation(.spring(duration: 0.6), value: percentage)
                     Text("\(Int(percentage))%")
@@ -95,34 +344,7 @@ struct ChecklistProgressCard: View {
     }
 }
 
-// MARK: - Category Section
-
-struct ChecklistCategorySection: View {
-    @EnvironmentObject var appViewModel: AppViewModel
-    let category: ChecklistItem.ChecklistCategory
-    let items: [ChecklistItem]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Image(systemName: category.icon)
-                    .foregroundStyle(.blue)
-                Text(category.rawValue).font(.headline)
-                Spacer()
-                Text("\(items.filter { $0.isCompleted }.count)/\(items.count)")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-
-            VStack(spacing: 8) {
-                ForEach(items) { item in
-                    ChecklistItemRow(item: item)
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Checklist Item Row
+// MARK: - Item Row
 
 struct ChecklistItemRow: View {
     @EnvironmentObject var appViewModel: AppViewModel
@@ -137,21 +359,11 @@ struct ChecklistItemRow: View {
                     .padding(.top, 1)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text(item.title)
-                            .font(.subheadline).fontWeight(.medium)
-                            .foregroundStyle(Color.primary)
-                            .strikethrough(item.isCompleted, color: .secondary)
-
-                        if !item.requiredForGraduation {
-                            Text("Opcional")
-                                .font(.caption2)
-                                .padding(.horizontal, 6).padding(.vertical, 2)
-                                .background(Color.orange.opacity(0.14))
-                                .foregroundStyle(.orange)
-                                .cornerRadius(6)
-                        }
-                    }
+                    Text(item.title)
+                        .font(.subheadline).fontWeight(.medium)
+                        .foregroundStyle(Color.primary)
+                        .strikethrough(item.isCompleted, color: .secondary)
+                        .multilineTextAlignment(.leading)
 
                     Text(item.description)
                         .font(.caption)

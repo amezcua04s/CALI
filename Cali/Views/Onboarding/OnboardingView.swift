@@ -75,30 +75,67 @@ struct OnboardingView: View {
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .animation(.easeInOut(duration: 0.3), value: step)
 
-                HStack(spacing: 12) {
-                    if step > 0 {
-                        Button("Atrás") { withAnimation { step -= 1 } }
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.gray.opacity(0.1))
-                            .cornerRadius(14)
-                    }
-
-                    Button(primaryButtonTitle) {
-                        if step == totalSteps - 1 {
-                            finishOnboarding()
-                        } else {
+                VStack(spacing: 12) {
+                    if step == 0 {
+                        // VISTA INICIAL: Registro e Inicio de Sesión
+                        Button {
                             withAnimation { step += 1 }
+                        } label: {
+                            Text("Registrarse")
+                                .fontWeight(.bold)
+                                .frame(maxWidth: .infinity) // Hace que el texto use todo el ancho
+                                .padding(.vertical, 18)    // Crea el área de toque vertical
+                                .background(Color.blue)    // El color ahora es parte del área táctil
+                                .foregroundStyle(.white)
+                                .cornerRadius(16)
+                        }
+
+                        Button {
+                            // Aquí iría la acción para abrir la pantalla de Login
+                            print("Ir a Iniciar Sesión")
+                        } label: {
+                            Text("Ya tengo cuenta · Iniciar sesión")
+                                .fontWeight(.semibold)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 18)
+                                .background(Color.blue.opacity(0.1))
+                                .foregroundStyle(.blue)
+                                .cornerRadius(16)
+                        }
+                        
+                    } else {
+                        // VISTA DE FLUJO: Atrás y Continuar
+                        HStack(spacing: 12) {
+                            Button {
+                                withAnimation { step -= 1 }
+                            } label: {
+                                Text("Atrás")
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                    .background(Color.gray.opacity(0.1))
+                                    .cornerRadius(14)
+                            }
+
+                            Button {
+                                if step == totalSteps - 1 {
+                                    finishOnboarding()
+                                } else {
+                                    withAnimation { step += 1 }
+                                }
+                            } label: {
+                                Text(primaryButtonTitle)
+                                    .fontWeight(.bold)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                    .background((canContinue && !isExtractingCredentialData) ? Color.blue : Color.gray.opacity(0.3))
+                                    .foregroundStyle(.white)
+                                    .cornerRadius(14)
+                            }
+                            .disabled(!canContinue || isExtractingCredentialData)
                         }
                     }
-                    .disabled(!canContinue || isExtractingCredentialData)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background((canContinue && !isExtractingCredentialData) ? Color.blue : Color.gray.opacity(0.3))
-                    .foregroundStyle(.white)
-                    .cornerRadius(14)
-                    .fontWeight(.semibold)
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 40)
@@ -130,6 +167,7 @@ struct OnboardingView: View {
     }
 
     // MARK: Validation
+    // MARK: Validation
     private var canContinue: Bool {
         switch step {
         case 0:
@@ -137,10 +175,13 @@ struct OnboardingView: View {
         case 1:
             return frontCredentialImage != nil && backCredentialImage != nil
         case 2:
+            let isStudentNumberValid = studentNumber.count == 9 && studentNumber.allSatisfy { $0.isNumber }
+            let isGenerationValid = generation.count == 4 && generation.allSatisfy { $0.isNumber }
+            
             return !name.trimmed.isEmpty &&
                    !lastName.trimmed.isEmpty &&
-                   !studentNumber.trimmed.isEmpty &&
-                   !generation.trimmed.isEmpty &&
+                   isStudentNumberValid &&
+                   isGenerationValid &&
                    selectedCareer != nil &&
                    isValidInstitutionalEmail(email)
         case 3:
@@ -219,10 +260,10 @@ struct WelcomeStep: View {
 
                 ZStack {
                     Circle()
-                        .fill(LinearGradient(colors: [.blue, .purple],
+                        .fill(LinearGradient(colors: [.principal, .secundario],
                                             startPoint: .topLeading, endPoint: .bottomTrailing))
                         .frame(width: 120, height: 120)
-                        .shadow(color: .blue.opacity(0.4), radius: 24, x: 0, y: 12)
+                        .shadow(color: .yellow.opacity(0.4), radius: 24, x: 0, y: 12)
                     Text("C")
                         .font(.system(size: 62, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
@@ -239,18 +280,18 @@ struct WelcomeStep: View {
                 }
 
                 VStack(spacing: 12) {
-                    FeatureRow(icon: "camera.viewfinder", color: .blue,
-                               title: "Captura tu credencial",
-                               description: "Toma una foto del frente y reverso para extraer tus datos")
-                    FeatureRow(icon: "text.viewfinder", color: .green,
-                               title: "Autollenado inteligente",
-                               description: "Se detectan nombre, apellidos, número de cuenta, carrera y generación")
-                    FeatureRow(icon: "envelope.badge", color: .orange,
-                               title: "Primer acceso",
-                               description: "Valida tu correo institucional y genera una contraseña provisional")
+                    FeatureRow(icon: "brain.head.profile", color: .blue,
+                               title: "IA Companion",
+                               description: "Te orientaré en tu carrera con inteligencia artificial")
+                    FeatureRow(icon: "checkmark.circle.fill", color: .green,
+                               title: "Checklist de Titulación",
+                               description: "Sigue tu avance hacia el título paso a paso")
+                    FeatureRow(icon: "calendar.badge.plus", color: .orange,
+                               title: "Horario Inteligente",
+                               description: "Arma tu semestre con las materias disponibles")
                 }
                 .padding(.horizontal, 24)
-
+                
                 Spacer(minLength: 24)
             }
         }
@@ -540,10 +581,16 @@ struct PersonalDataStep: View {
                                   text: $name, icon: "person")
                     CALITextField(title: "Apellidos", placeholder: "p. ej. Ramírez Torres",
                                   text: $lastName, icon: "person.fill")
-                    CALITextField(title: "Número de cuenta", placeholder: "p. ej. 420123456",
-                                  text: $studentNumber, icon: "number")
-                    CALITextField(title: "Generación", placeholder: "p. ej. 2023",
-                                  text: $generation, icon: "calendar")
+                    CALITextField(title: "Número de cuenta",
+                                  placeholder: "9 dígitos (ej. 420123456)",
+                                  text: $studentNumber,
+                                  icon: "number",
+                                  keyboardType: .numberPad)
+                    CALITextField(title: "Generación",
+                                  placeholder: "4 dígitos (ej. 2023)",
+                                  text: $generation,
+                                  icon: "calendar",
+                                  keyboardType: .numberPad)
                     CALITextField(title: "Correo institucional UNAM",
                                   placeholder: "usuario@comunidad.unam.mx",
                                   text: $email, icon: "envelope",
@@ -593,7 +640,7 @@ struct SemesterStep: View {
     @Binding var semester: Int
     let career: Career?
 
-    var maxSemesters: Int { career?.durationSemesters ?? 12 }
+    var maxSemesters: Int { career?.durationSemesters ?? 8 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 28) {

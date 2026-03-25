@@ -228,6 +228,9 @@ struct SubjectCatalogView: View {
                 $0.clave.localizedCaseInsensitiveContains(searchText)
             }
         }
+        // Remove subjects whose name is already registered
+        let existingNames = Set(appViewModel.selectedSubjects.map { $0.name.lowercased() })
+        list = list.filter { !existingNames.contains($0.name.lowercased()) }
         return list
     }
 
@@ -257,12 +260,22 @@ struct SubjectCatalogView: View {
     private func canAddMoreSubjects() -> Bool {
         appViewModel.selectedSubjects.count < 7
     }
+    
+    private func hasDuplicateName(_ subject: Subject) -> Bool {
+        appViewModel.selectedSubjects.contains { $0.name.caseInsensitiveCompare(subject.name) == .orderedSame }
+    }
 
     private func toggle(_ subject: Subject) {
         if let idx = appViewModel.selectedSubjects.firstIndex(where: { $0.id == subject.id }) {
             // If already selected, remove it (toggle off)
             appViewModel.selectedSubjects.remove(at: idx)
             appViewModel.saveSubjects()
+            return
+        }
+        
+        // Prevent adding subjects with the same name already registered
+        if hasDuplicateName(subject) {
+            // No-op: it's already filtered from the list, but guard here for safety
             return
         }
 

@@ -1,6 +1,5 @@
 import Foundation
 
-
 import FoundationModels
 
 class AICompanionService {
@@ -13,7 +12,9 @@ class AICompanionService {
         Ayudas con: titulación y requisitos de graduación, orientación sobre materias y plan \
         de estudios, vida universitaria, servicio social, prácticas profesionales y cualquier \
         duda académica. Responde siempre en español, sé conciso (máximo 3 párrafos), cálido, \
-        y usa emojis ocasionalmente para hacer la conversación amigable.
+        y usa emojis ocasionalmente para hacer la conversación amigable.\
+        El servicio social dura 480 horas en total
+        
         """
 
     init() {
@@ -38,6 +39,23 @@ class AICompanionService {
         }
         // Fallback when Apple Intelligence is unavailable
         return fallbackResponse(for: userMessage)
+    }
+
+    func respond(to userMessage: String, context: String, subjects: [Subject]) async throws -> String {
+        // Build a concise summary of the user's current schedule/subjects
+        let subjectsSummary: String
+        if subjects.isEmpty {
+            subjectsSummary = "Sin materias registradas."
+        } else {
+            let lines = subjects.map { s in
+                let slots = s.scheduleSlots.map { "\($0.day.shortName) \($0.timeDisplay)" }.joined(separator: ", ")
+                return "• \(s.name) — \(s.credits) cr. — \(slots)"
+            }
+            subjectsSummary = lines.joined(separator: "\n")
+        }
+
+        let enrichedContext = "\(context)\n\n[Horario/Materias del alumno]\n\(subjectsSummary)"
+        return try await respond(to: userMessage, context: enrichedContext)
     }
 
     private func fallbackResponse(for message: String) -> String {

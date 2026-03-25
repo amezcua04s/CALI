@@ -7,7 +7,7 @@ struct ChecklistItem: Identifiable, Codable {
     var title: String
     var description: String
     var isCompleted: Bool
-    var category: ChecklistCategory
+    var section: ChecklistSection
     var requiredForGraduation: Bool
     var details: String?
 
@@ -16,7 +16,7 @@ struct ChecklistItem: Identifiable, Codable {
         title: String,
         description: String,
         isCompleted: Bool = false,
-        category: ChecklistCategory,
+        section: ChecklistSection,
         requiredForGraduation: Bool = true,
         details: String? = nil
     ) {
@@ -24,86 +24,250 @@ struct ChecklistItem: Identifiable, Codable {
         self.title = title
         self.description = description
         self.isCompleted = isCompleted
-        self.category = category
+        self.section = section
         self.requiredForGraduation = requiredForGraduation
         self.details = details
     }
 
-    // MARK: - Category
+    // MARK: - Section (siempre 2 secciones)
 
-    enum ChecklistCategory: String, Codable, CaseIterable {
-        case creditos      = "Créditos"
-        case servicio      = "Servicio Social"
-        case idioma        = "Idioma"
-        case titulacion    = "Titulación"
-        case practicas     = "Prácticas"
-        case administrativo = "Administrativo"
+    enum ChecklistSection: String, Codable, CaseIterable {
+        case obligatoria = "Requisitos Obligatorios"
+        case modalidad   = "Pasos de Titulación"
 
         var icon: String {
             switch self {
-            case .creditos:       return "books.vertical"
-            case .servicio:       return "hands.and.sparkles"
-            case .idioma:         return "globe"
-            case .titulacion:     return "graduationcap"
-            case .practicas:      return "briefcase"
-            case .administrativo: return "doc.text"
+            case .obligatoria: return "list.bullet.clipboard"
+            case .modalidad:   return "graduationcap"
+            }
+        }
+    }
+
+    // MARK: - Graduation Option
+
+    enum GraduationOption: String, Codable, CaseIterable {
+        case tesis               = "Tesis"
+        case examenConocimientos = "Examen de Conocimientos"
+        case diplomado           = "Diplomado"
+        case promedio            = "Titulación por Promedio"
+        case proyecto            = "Proyecto"
+
+        var icon: String {
+            switch self {
+            case .tesis:               return "doc.text.magnifyingglass"
+            case .examenConocimientos: return "pencil.and.list.clipboard"
+            case .diplomado:           return "checkmark.seal"
+            case .promedio:            return "chart.bar.xaxis.ascending"
+            case .proyecto:            return "lightbulb"
             }
         }
     }
 }
 
+// MARK: - Item Factories
 
 extension ChecklistItem {
-    static let defaultItems: [ChecklistItem] = [
-        ChecklistItem(
-            title: "Créditos totales",
-            description: "Completar el 100% de los créditos del plan de estudios",
-            category: .creditos,
-            details: "Consulta tu historial académico en el portal de DGAE"
-        ),
-        ChecklistItem(
-            title: "Servicio Social",
-            description: "480 horas mínimas en institución registrada ante la UNAM",
-            category: .servicio,
-            details: "Regístrate en el sistema de SS de tu facultad"
-        ),
-        ChecklistItem(
-            title: "Liberación del Idioma",
-            description: "Certificación de idioma extranjero (inglés u otro)",
-            category: .idioma,
-            details: "TOEFL, Cambridge, CELE-UNAM u otro reconocido por la institución"
-        ),
-        ChecklistItem(
-            title: "Modalidad de Titulación",
-            description: "Elegir y completar la opción de titulación (tesis, tesina, EGEL, etc.)",
-            category: .titulacion
-        ),
-        ChecklistItem(
-            title: "Impresión y entrega del trabajo",
-            description: "Entregar los ejemplares requeridos según tu facultad",
-            category: .titulacion
-        ),
-        ChecklistItem(
-            title: "Prácticas Profesionales",
-            description: "Completar horas de prácticas según tu plan de estudios",
-            category: .practicas,
-            requiredForGraduation: false
-        ),
-        ChecklistItem(
-            title: "Sin adeudo en Biblioteca",
-            description: "No tener libros pendientes de devolución",
-            category: .administrativo
-        ),
-        ChecklistItem(
-            title: "Trámite de Certificado",
-            description: "Solicitar certificado de estudios en Control Escolar",
-            category: .administrativo
-        ),
-        ChecklistItem(
-            title: "Pago de derechos de examen",
-            description: "Cubrir los derechos del examen profesional",
-            category: .administrativo,
-            requiredForGraduation: false)
-        
-    ]
+
+    // MARK: Sección 1 – siempre visible
+    // Prácticas Profesionales solo aparece para Negocios Internacionales
+
+    static func obligatorioItems(isNegociosInternacionales: Bool) -> [ChecklistItem] {
+        var items: [ChecklistItem] = [
+            ChecklistItem(
+                title: "Créditos totales",
+                description: "Completar el 100 % de los créditos del plan de estudios",
+                section: .obligatoria,
+                details: "Consulta tu historial académico en el portal de DGAE"
+            ),
+            ChecklistItem(
+                title: "Servicio Social",
+                description: "480 horas mínimas en institución registrada ante la UNAM",
+                section: .obligatoria,
+                details: "Regístrate en el sistema de SS de tu facultad"
+            ),
+            ChecklistItem(
+                title: "Liberación del Idioma",
+                description: "Certificación de idioma extranjero (inglés u otro)",
+                section: .obligatoria,
+                details: "TOEFL, Cambridge, CELE-UNAM u otro reconocido por la institución"
+            ),
+            ChecklistItem(
+                title: "Sin adeudo en Biblioteca",
+                description: "No tener libros pendientes de devolución",
+                section: .obligatoria
+            ),
+            ChecklistItem(
+                title: "Trámite de Certificado",
+                description: "Solicitar certificado de estudios en Control Escolar",
+                section: .obligatoria
+            ),
+            ChecklistItem(
+                title: "Pago de derechos",
+                description: "Cubrir los derechos del examen profesional",
+                section: .obligatoria
+            ),
+        ]
+
+        if isNegociosInternacionales {
+            items.append(ChecklistItem(
+                title: "Prácticas Profesionales",
+                description: "Completar las horas de prácticas profesionales requeridas",
+                section: .obligatoria,
+                details: "Consulta los requisitos específicos con tu coordinación"
+            ))
+        }
+
+        return items
+    }
+
+    // MARK: Sección 2 – cambia según la modalidad elegida
+
+    static func modalidadItems(
+        option: GraduationOption,
+        revisionCount: Int,
+        fechaInscripcion: String,
+        diplomadoLugar: String
+    ) -> [ChecklistItem] {
+
+        switch option {
+
+        // ── TESIS ────────────────────────────────────────────────────────────
+        case .tesis:
+            var items: [ChecklistItem] = [
+                ChecklistItem(
+                    title: "Buscar asesor",
+                    description: "Encontrar a un profesor que acepte asesorar tu tesis",
+                    section: .modalidad
+                ),
+                ChecklistItem(
+                    title: "Encontrar tema",
+                    description: "Definir el tema de investigación de la tesis",
+                    section: .modalidad
+                ),
+                ChecklistItem(
+                    title: "Hacer investigación",
+                    description: "Recopilar y analizar fuentes para el desarrollo de la tesis",
+                    section: .modalidad
+                ),
+                ChecklistItem(
+                    title: "Hacer tesina",
+                    description: "Redactar el documento completo de la tesis",
+                    section: .modalidad
+                ),
+            ]
+            for i in 1...max(1, revisionCount) {
+                items.append(ChecklistItem(
+                    title: "Revisión de tesina \(i)",
+                    description: "Revisión número \(i) con tu asesor",
+                    section: .modalidad
+                ))
+            }
+            items.append(ChecklistItem(
+                title: "Presentación final de tesina",
+                description: "Examen profesional ante el jurado",
+                section: .modalidad
+            ))
+            return items
+
+        // ── EXAMEN DE CONOCIMIENTOS ──────────────────────────────────────────
+        case .examenConocimientos:
+            let f = fechaInscripcion.trimmingCharacters(in: .whitespaces).isEmpty
+                    ? "la fecha indicada" : fechaInscripcion
+            return [
+                ChecklistItem(
+                    title: "Inscribirse antes de \(f)",
+                    description: "Realizar el registro al examen de conocimientos",
+                    section: .modalidad
+                ),
+                ChecklistItem(
+                    title: "Hacer pago correspondiente",
+                    description: "Cubrir el costo del examen según el arancel vigente",
+                    section: .modalidad
+                ),
+                ChecklistItem(
+                    title: "Presentarse el día del examen",
+                    description: "Acudir en tiempo y forma con identificación y documentos requeridos",
+                    section: .modalidad
+                ),
+            ]
+
+        // ── DIPLOMADO ────────────────────────────────────────────────────────
+        case .diplomado:
+            let f = fechaInscripcion.trimmingCharacters(in: .whitespaces).isEmpty
+                    ? "la fecha indicada" : fechaInscripcion
+            let l = diplomadoLugar.trimmingCharacters(in: .whitespaces).isEmpty
+                    ? "el lugar indicado" : diplomadoLugar
+            return [
+                ChecklistItem(
+                    title: "Inscribirse antes de \(f)",
+                    description: "Completar el proceso de inscripción al diplomado",
+                    section: .modalidad
+                ),
+                ChecklistItem(
+                    title: "Hacer pago correspondiente",
+                    description: "Cubrir el costo del diplomado",
+                    section: .modalidad
+                ),
+                ChecklistItem(
+                    title: "Presentarse en \(l) para entrega de papeles",
+                    description: "Llevar la documentación requerida para el alta del diplomado",
+                    section: .modalidad
+                ),
+            ]
+
+        // ── PROMEDIO ─────────────────────────────────────────────────────────
+        case .promedio:
+            return [
+                ChecklistItem(
+                    title: "Presentar solicitud de titulación por promedio",
+                    description: "Solicitar la titulación automática por promedio en Control Escolar",
+                    section: .modalidad,
+                    details: "Se requiere promedio mínimo de 9.0 sin materias reprobadas"
+                ),
+            ]
+
+        // ── PROYECTO ─────────────────────────────────────────────────────────
+        case .proyecto:
+            var items: [ChecklistItem] = [
+                ChecklistItem(
+                    title: "Pensar en idea de proyecto",
+                    description: "Definir la idea central y alcance del proyecto",
+                    section: .modalidad
+                ),
+                ChecklistItem(
+                    title: "Investigar información necesaria",
+                    description: "Recopilar fuentes, datos y marco teórico del proyecto",
+                    section: .modalidad
+                ),
+                ChecklistItem(
+                    title: "Buscar asesor",
+                    description: "Encontrar a un profesor que acepte asesorar tu proyecto",
+                    section: .modalidad
+                ),
+                ChecklistItem(
+                    title: "Desarrollar el proyecto",
+                    description: "Elaborar el proyecto completo según el plan definido",
+                    section: .modalidad
+                ),
+            ]
+            for i in 1...max(1, revisionCount) {
+                items.append(ChecklistItem(
+                    title: "Revisión del proyecto \(i)",
+                    description: "Revisión número \(i) con tu asesor",
+                    section: .modalidad
+                ))
+            }
+            items.append(ChecklistItem(
+                title: "Entrega final del proyecto",
+                description: "Entregar el proyecto terminado en las instancias correspondientes",
+                section: .modalidad
+            ))
+            items.append(ChecklistItem(
+                title: "Examen oral del proyecto",
+                description: "Presentar y defender el proyecto ante el jurado",
+                section: .modalidad
+            ))
+            return items
+        }
+    }
 }
