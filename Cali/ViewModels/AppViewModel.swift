@@ -139,7 +139,7 @@ class AppViewModel: ObservableObject {
         diplomadoLugar: String
     ) -> [ChecklistItem] {
         // Map previous completion state by title
-        var completedTitles = Set(saved.filter { $0.isCompleted }.map { $0.title })
+        let completedTitles = Set(saved.filter { $0.isCompleted }.map { $0.title })
 
         // Section 1
         var result = ChecklistItem.obligatorioItems(isNegociosInternacionales: isNegociosInternacionales)
@@ -176,6 +176,8 @@ class AppViewModel: ObservableObject {
         )
         saveChecklist()
     }
+    
+    
 
     // MARK: - Computed helpers
 

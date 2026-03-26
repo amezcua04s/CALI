@@ -178,28 +178,31 @@ struct ModalidadConfigSection: View {
         if let opt = appViewModel.selectedGraduationOption {
             VStack(alignment: .leading, spacing: 12) {
                 switch opt {
-
+                    
                 case .tesis:
                     RevisionStepper(
                         label: "Número de revisiones de tesina",
                         value: $appViewModel.revisionCount
                     )
-
+                    
                 case .examenConocimientos:
                     DateInputField(
                         label: "Fecha límite de inscripción",
                         placeholder: "ej. 15 de abril de 2026",
                         text: $appViewModel.fechaInscripcion
                     )
-
+                    
                 case .diplomado:
-                    DateInputField(
-                        label: "Fecha límite de inscripción",
-                        placeholder: "ej. 10 de mayo de 2026",
-                        text: $appViewModel.fechaInscripcion
-                    )
-                    PlaceInputField(text: $appViewModel.diplomadoLugar)
-
+                    // Agrupamos para mantener el espaciado interno
+                    VStack(alignment: .leading, spacing: 12) {
+                        DateInputField(
+                            label: "Fecha límite de inscripción",
+                            placeholder: "ej. 10 de mayo de 2026",
+                            text: $appViewModel.fechaInscripcion
+                        )
+                        PlaceInputField(text: $appViewModel.diplomadoLugar)
+                    }
+                    
                 case .promedio:
                     Label(
                         "Asegúrate de tener promedio ≥ 9.5 y ser alumno regular.",
@@ -207,19 +210,25 @@ struct ModalidadConfigSection: View {
                     )
                     .font(.caption)
                     .foregroundStyle(.secondary)
-
+                    .fixedSize(horizontal: false, vertical: true) // Evita que el texto se corte
+                    
                 case .proyecto:
                     RevisionStepper(
                         label: "Número de revisiones del proyecto",
                         value: $appViewModel.revisionCount
                     )
                 }
+                
+                // El Spacer hace que el contenido se pegue arriba y la caja mantenga su tamaño
+                Spacer(minLength: 0)
             }
             .padding(14)
+            .frame(maxWidth: .infinity)
+            // Ajusta este valor (130) según qué tan alto sea tu componente DateInputField + PlaceInputField
+            .frame(height: 140, alignment: .topLeading)
             .background(Color.blue.opacity(0.05))
             .cornerRadius(14)
-        }
-    }
+        }    }
 }
 
 // MARK: - Sub-componentes de config

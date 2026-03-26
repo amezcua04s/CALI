@@ -11,6 +11,8 @@ struct LoginView: View {
     @EnvironmentObject var appViewModel: AppViewModel
     @Environment(\.dismiss) var dismiss
     
+    var onRegister: (() -> Void)?
+    
     @State private var identifier = "" // Puede ser correo o número de cuenta
     @State private var password = ""
     @State private var isPasswordVisible = false
@@ -31,7 +33,7 @@ struct LoginView: View {
                         VStack(spacing: 16) {
                             ZStack {
                                 Circle()
-                                    .fill(LinearGradient(colors: [.blue, .purple],
+                                    .fill(LinearGradient(colors: [.principal, .secundario],
                                                          startPoint: .topLeading,
                                                          endPoint: .bottomTrailing))
                                     .frame(width: 100, height: 100)
@@ -39,7 +41,7 @@ struct LoginView: View {
                                     .font(.system(size: 52, weight: .bold, design: .rounded))
                                     .foregroundStyle(.white)
                             }
-                            .shadow(color: .blue.opacity(0.2), radius: 15, y: 8)
+                            .shadow(color: .yellow.opacity(0.4), radius: 15, y: 8)
                             
                             VStack(spacing: 8) {
                                 Text("Bienvenido de nuevo")
@@ -135,6 +137,7 @@ struct LoginView: View {
                             .disabled(!canLogin || isLoading)
 
                             Button {
+                                onRegister?()
                                 dismiss()
                             } label: {
                                 Text("¿No tienes cuenta? Regístrate")
@@ -173,8 +176,7 @@ struct LoginView: View {
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             await MainActor.run {
                 isLoading = false
-                // Aquí conectarías con tu AppViewModel para marcar sesión iniciada
-                // appViewModel.hasCompletedOnboarding = true
+
                 dismiss()
             }
         }

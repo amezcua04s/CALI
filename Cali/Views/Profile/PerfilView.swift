@@ -18,11 +18,11 @@ struct PerfilView: View {
                     VStack(spacing: 12) {
                         ZStack {
                             Circle()
-                                .fill(LinearGradient(colors: [.blue, .purple],
+                                .fill(LinearGradient(colors: [.principal, .secundario],
                                                     startPoint: .topLeading,
                                                     endPoint: .bottomTrailing))
                                 .frame(width: 90, height: 90)
-                                .shadow(color: .blue.opacity(0.35), radius: 14, x: 0, y: 6)
+                                .shadow(color: .yellow.opacity(0.35), radius: 14, x: 0, y: 6)
                             Text(initials)
                                 .font(.system(size: 34, weight: .bold))
                                 .foregroundStyle(.white)
@@ -57,10 +57,34 @@ struct PerfilView: View {
                     .padding(.horizontal)
 
                     // ── Questionnaire results ───────────────────
-                    if let answers = appViewModel.userProfile.questionnaireAnswers,
-                       !answers.specialization.isEmpty || !answers.interests.isEmpty {
+                    if let answers = appViewModel.userProfile.questionnaireAnswers {
                         QuestionnaireResultCard(answers: answers)
                             .padding(.horizontal)
+                        
+                        // --- NUEVA TARJETA DE MATERIAS SUGERIDAS ---
+                        if !answers.suggestedSubjects.isEmpty {
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    Image(systemName: "book.pages.fill").foregroundStyle(.blue)
+                                    Text("Materias Recomendadas").font(.headline)
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 8) {
+                                    ForEach(answers.suggestedSubjects, id: \.self) { subject in
+                                        HStack(spacing: 10) {
+                                            Circle().fill(Color.blue).frame(width: 6, height: 6)
+                                            Text(subject).font(.subheadline)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.white)
+                            .cornerRadius(16)
+                            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+                            .padding(.horizontal)
+                        }
                     }
 
                     // ── Options menu ────────────────────────────
@@ -316,7 +340,7 @@ struct EditProfileView: View {
                         }
                     }
 
-                    Stepper("Semestre: \(semester)°", value: $semester, in: 1...12)
+                    Stepper("Semestre: \(semester)°", value: $semester, in: 1...8)
                 }
             }
             .navigationTitle("Editar Perfil")

@@ -1,8 +1,6 @@
 import SwiftUI
 
 // MARK: - MainTabView
-// Root container after onboarding. Shows two tabs: Principal + Perfil.
-
 struct MainTabView: View {
     @EnvironmentObject var appViewModel: AppViewModel
 
@@ -18,10 +16,9 @@ struct MainTabView: View {
                     Label("Perfil", systemImage: "person.crop.circle.fill")
                 }
         }
-        // Mandatory questionnaire pop-up – user MUST see it but CAN skip answering
+        // Pasamos el binding de la carrera directamente desde el perfil del usuario en el ViewModel
         .sheet(isPresented: $appViewModel.showQuestionnaire) {
-            QuestionnaireView()
-                .interactiveDismissDisabled(true) // Prevents swipe-to-dismiss
+            QuestionnaireView(selectedCareer: $appViewModel.userProfile.career)                .interactiveDismissDisabled(true) // Evita que se cierre deslizando
         }
     }
 }

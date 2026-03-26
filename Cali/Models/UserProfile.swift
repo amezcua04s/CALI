@@ -33,8 +33,12 @@ struct UserProfile: Codable {
 
 // MARK: - QuestionnaireAnswers
 
+// En tu archivo de Modelos o AppViewModel
 struct QuestionnaireAnswers: Codable {
     var interests: [String]
     var specialization: String
+    var workEnvironment: String
+    var professionalProfile: Double
     var goals: String
+    var suggestedSubjects: [String] 
 }

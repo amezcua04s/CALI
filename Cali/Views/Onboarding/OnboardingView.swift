@@ -7,8 +7,10 @@ import UIKit
 
 struct OnboardingView: View {
     @EnvironmentObject var appViewModel: AppViewModel
+    @State private var showLogin = false
 
     @State private var step = 0
+    @State private var isGoingBack = false
     @State private var showCareerPicker = false
 
     // Form state
@@ -48,51 +50,62 @@ struct OnboardingView: View {
                         .padding(.top, 20)
                 }
 
-                TabView(selection: $step) {
-                    WelcomeStep().tag(0)
-                    CredentialCaptureStep(
-                        frontImage: $frontCredentialImage,
-                        backImage: $backCredentialImage,
-                        isExtracting: isExtractingCredentialData,
-                        extractionErrorMessage: extractionErrorMessage,
-                        showSuccess: showExtractionSuccessToast,
-                        onExtract: extractCredentialData
-                    )
-                    .tag(1)
-                    PersonalDataStep(
-                        name: $name,
-                        lastName: $lastName,
-                        studentNumber: $studentNumber,
-                        generation: $generation,
-                        email: $email,
-                        selectedCareer: $selectedCareer,
-                        showCareerPicker: $showCareerPicker,
-                        extractedCredentialData: extractedCredentialData
-                    )
-                    .tag(2)
-                    SemesterStep(semester: $currentSemester, career: selectedCareer).tag(3)
+                // Navegación controlada únicamente por botones, sin swipe
+                Group {
+                    switch step {
+                    case 0:
+                        WelcomeStep()
+                    case 1:
+                        CredentialCaptureStep(
+                            frontImage: $frontCredentialImage,
+                            backImage: $backCredentialImage,
+                            isExtracting: isExtractingCredentialData,
+                            extractionErrorMessage: extractionErrorMessage,
+                            showSuccess: showExtractionSuccessToast,
+                            onExtract: extractCredentialData
+                        )
+                    case 2:
+                        PersonalDataStep(
+                            name: $name,
+                            lastName: $lastName,
+                            studentNumber: $studentNumber,
+                            generation: $generation,
+                            email: $email,
+                            selectedCareer: $selectedCareer,
+                            showCareerPicker: $showCareerPicker,
+                            extractedCredentialData: extractedCredentialData
+                        )
+                    case 3:
+                        SemesterStep(semester: $currentSemester, career: selectedCareer)
+                    default:
+                        EmptyView()
+                    }
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .transition(.asymmetric(
+                    insertion: .move(edge: isGoingBack ? .leading : .trailing),
+                    removal: .move(edge: isGoingBack ? .trailing : .leading)
+                ))
                 .animation(.easeInOut(duration: 0.3), value: step)
 
                 VStack(spacing: 12) {
                     if step == 0 {
                         // VISTA INICIAL: Registro e Inicio de Sesión
                         Button {
+                            isGoingBack = false
                             withAnimation { step += 1 }
                         } label: {
                             Text("Registrarse")
                                 .fontWeight(.bold)
-                                .frame(maxWidth: .infinity) // Hace que el texto use todo el ancho
-                                .padding(.vertical, 18)    // Crea el área de toque vertical
-                                .background(Color.blue)    // El color ahora es parte del área táctil
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 18)
+                                .background(Color.blue)
                                 .foregroundStyle(.white)
                                 .cornerRadius(16)
                         }
 
                         Button {
-                            // Aquí iría la acción para abrir la pantalla de Login
-                            print("Ir a Iniciar Sesión")
+                            showLogin = true
                         } label: {
                             Text("Ya tengo cuenta · Iniciar sesión")
                                 .fontWeight(.semibold)
@@ -102,11 +115,12 @@ struct OnboardingView: View {
                                 .foregroundStyle(.blue)
                                 .cornerRadius(16)
                         }
-                        
+
                     } else {
                         // VISTA DE FLUJO: Atrás y Continuar
                         HStack(spacing: 12) {
                             Button {
+                                isGoingBack = true
                                 withAnimation { step -= 1 }
                             } label: {
                                 Text("Atrás")
@@ -122,6 +136,7 @@ struct OnboardingView: View {
                                 if step == totalSteps - 1 {
                                     finishOnboarding()
                                 } else {
+                                    isGoingBack = false
                                     withAnimation { step += 1 }
                                 }
                             } label: {
@@ -143,6 +158,12 @@ struct OnboardingView: View {
         }
         .sheet(isPresented: $showCareerPicker) {
             CareerPickerSheet(selectedCareer: $selectedCareer)
+        }
+        .sheet(isPresented: $showLogin) {
+            LoginView {
+                isGoingBack = false
+                withAnimation { step = 1 }
+            }
         }
         .alert("Registro completado", isPresented: $showRegistrationAlert) {
             Button("Continuar") {
@@ -167,7 +188,6 @@ struct OnboardingView: View {
     }
 
     // MARK: Validation
-    // MARK: Validation
     private var canContinue: Bool {
         switch step {
         case 0:
@@ -177,7 +197,7 @@ struct OnboardingView: View {
         case 2:
             let isStudentNumberValid = studentNumber.count == 9 && studentNumber.allSatisfy { $0.isNumber }
             let isGenerationValid = generation.count == 4 && generation.allSatisfy { $0.isNumber }
-            
+
             return !name.trimmed.isEmpty &&
                    !lastName.trimmed.isEmpty &&
                    isStudentNumberValid &&
@@ -291,7 +311,7 @@ struct WelcomeStep: View {
                                description: "Arma tu semestre con las materias disponibles")
                 }
                 .padding(.horizontal, 24)
-                
+
                 Spacer(minLength: 24)
             }
         }
@@ -605,6 +625,24 @@ struct PersonalDataStep: View {
                     }
                 }
 
+                .onChange(of: studentNumber) { oldValue, newValue in
+                    let filtered = newValue.filter { "0123456789".contains($0) }
+                    if filtered.count > 9 {
+                        studentNumber = String(filtered.prefix(9))
+                    } else {
+                        studentNumber = filtered
+                    }
+                }
+
+                .onChange(of: generation) { oldValue, newValue in
+                    let filtered = newValue.filter { "0123456789".contains($0) }
+                    if filtered.count > 4 {
+                        generation = String(filtered.prefix(4))
+                    } else {
+                        generation = filtered
+                    }
+                }
+                
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Carrera")
                         .font(.headline)
