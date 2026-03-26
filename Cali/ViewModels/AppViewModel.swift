@@ -31,7 +31,7 @@ class AppViewModel: ObservableObject {
         static let graduationOption       = "graduationOption"
         static let revisionCount          = "revisionCount"
         static let fechaInscripcion       = "fechaInscripcion"
-        static let diplomadoLugar         = "diplomadoLugar"
+        static let diplomadoNombre        = "diplomadoNombre"
     }
 
     // MARK: Published state
@@ -55,7 +55,7 @@ class AppViewModel: ObservableObject {
     @Published var fechaInscripcion: String = "" {
         didSet { saveGraduationSettings(); regenerateChecklist() }
     }
-    @Published var diplomadoLugar: String = "" {
+    @Published var diplomadoNombre: String = "" {
         didSet { saveGraduationSettings(); regenerateChecklist() }
     }
 
@@ -88,8 +88,8 @@ class AppViewModel: ObservableObject {
             let savedRC = UserDefaults.standard.integer(forKey: Keys.revisionCount)
             let finalRC = (savedRC == 0) ? 2 : savedRC
 
-            let fecha = UserDefaults.standard.string(forKey: Keys.fechaInscripcion) ?? ""
-            let lugar = UserDefaults.standard.string(forKey: Keys.diplomadoLugar)   ?? ""
+            let fecha   = UserDefaults.standard.string(forKey: Keys.fechaInscripcion) ?? ""
+            let nombre  = UserDefaults.standard.string(forKey: Keys.diplomadoNombre) ?? ""
 
             let savedItems: [ChecklistItem]
             if let data = UserDefaults.standard.data(forKey: Keys.checklistItems),
@@ -106,7 +106,7 @@ class AppViewModel: ObservableObject {
             self.selectedGraduationOption = savedOption
             self.revisionCount = finalRC
             self.fechaInscripcion = fecha
-            self.diplomadoLugar = lugar
+            self.diplomadoNombre  = nombre
 
             // 3. Ahora sí podemos usar lógica para el checklist
             let isNI = profile.career?.name == "Negocios Internacionales"
@@ -117,7 +117,7 @@ class AppViewModel: ObservableObject {
                 option: savedOption,
                 revisionCount: finalRC,
                 fechaInscripcion: fecha,
-                diplomadoLugar: lugar
+                diplomadoNombre: nombre
             )
 
             // 4. Programar tareas posteriores
@@ -136,7 +136,7 @@ class AppViewModel: ObservableObject {
         option: ChecklistItem.GraduationOption?,
         revisionCount: Int,
         fechaInscripcion: String,
-        diplomadoLugar: String
+        diplomadoNombre: String
     ) -> [ChecklistItem] {
         // Map previous completion state by title
         let completedTitles = Set(saved.filter { $0.isCompleted }.map { $0.title })
@@ -153,7 +153,7 @@ class AppViewModel: ObservableObject {
                 option: opt,
                 revisionCount: revisionCount,
                 fechaInscripcion: fechaInscripcion,
-                diplomadoLugar: diplomadoLugar
+                diplomadoNombre: diplomadoNombre
             )
             for i in modal.indices {
                 modal[i].isCompleted = completedTitles.contains(modal[i].title)
@@ -172,7 +172,7 @@ class AppViewModel: ObservableObject {
             option: selectedGraduationOption,
             revisionCount: revisionCount,
             fechaInscripcion: fechaInscripcion,
-            diplomadoLugar: diplomadoLugar
+            diplomadoNombre: diplomadoNombre
         )
         saveChecklist()
     }
@@ -226,7 +226,7 @@ class AppViewModel: ObservableObject {
         }
         UserDefaults.standard.set(revisionCount,    forKey: Keys.revisionCount)
         UserDefaults.standard.set(fechaInscripcion, forKey: Keys.fechaInscripcion)
-        UserDefaults.standard.set(diplomadoLugar,   forKey: Keys.diplomadoLugar)
+        UserDefaults.standard.set(diplomadoNombre,  forKey: Keys.diplomadoNombre)
     }
 
     // MARK: - Questionnaire
@@ -297,13 +297,13 @@ class AppViewModel: ObservableObject {
     func resetApp() {
         [Keys.userProfile, Keys.hasCompletedOnboarding,
          Keys.hasSeenQuestionnaire, Keys.checklistItems, Keys.selectedSubjects,
-         Keys.graduationOption, Keys.revisionCount, Keys.fechaInscripcion, Keys.diplomadoLugar]
+         Keys.graduationOption, Keys.revisionCount, Keys.fechaInscripcion, Keys.diplomadoNombre]
             .forEach { UserDefaults.standard.removeObject(forKey: $0) }
         userProfile = UserProfile()
         selectedGraduationOption = nil   // didSet will call regenerateChecklist
         revisionCount = 2
         fechaInscripcion = ""
-        diplomadoLugar = ""
+        diplomadoNombre  = ""
         selectedSubjects = []
         chatMessages = []
         hasCompletedOnboarding = false

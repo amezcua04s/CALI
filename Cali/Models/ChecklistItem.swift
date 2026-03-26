@@ -126,7 +126,7 @@ extension ChecklistItem {
         option: GraduationOption,
         revisionCount: Int,
         fechaInscripcion: String,
-        diplomadoLugar: String
+        diplomadoNombre: String
     ) -> [ChecklistItem] {
 
         switch option {
@@ -195,8 +195,8 @@ extension ChecklistItem {
         case .diplomado:
             let f = fechaInscripcion.trimmingCharacters(in: .whitespaces).isEmpty
                     ? "la fecha indicada" : fechaInscripcion
-            let l = diplomadoLugar.trimmingCharacters(in: .whitespaces).isEmpty
-                    ? "el lugar indicado" : diplomadoLugar
+            let n = diplomadoNombre.trimmingCharacters(in: .whitespaces).isEmpty
+                    ? "el diplomado seleccionado" : diplomadoNombre
             return [
                 ChecklistItem(
                     title: "Inscribirse antes de \(f)",
@@ -205,11 +205,11 @@ extension ChecklistItem {
                 ),
                 ChecklistItem(
                     title: "Hacer pago correspondiente",
-                    description: "Cubrir el costo del diplomado",
+                    description: "Cubrir el costo de \(n)",
                     section: .modalidad
                 ),
                 ChecklistItem(
-                    title: "Presentarse en \(l) para entrega de papeles",
+                    title: "Entregar documentación para \(n)",
                     description: "Llevar la documentación requerida para el alta del diplomado",
                     section: .modalidad
                 ),

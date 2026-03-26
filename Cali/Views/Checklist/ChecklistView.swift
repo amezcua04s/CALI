@@ -145,9 +145,9 @@ struct GraduationOptionPicker: View {
                                 .fontWeight(.medium)
                                 .multilineTextAlignment(.center)
                                 .lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
-                        .frame(width: 96)
-                        .padding(.vertical, 12)
+                        .frame(width: 96, height: 80)
                         .background(isSelected ? Color.blue : Color.white)
                         .foregroundStyle(isSelected ? Color.white : Color.primary)
                         .cornerRadius(14)
@@ -174,35 +174,58 @@ struct GraduationOptionPicker: View {
 struct ModalidadConfigSection: View {
     @EnvironmentObject var appViewModel: AppViewModel
 
+    // Fechas hardcodeadas por modalidad
+    private let examenDates   = ["15 de abril de 2026",     "20 de junio de 2026"]
+    private let diplomadoDates = ["10 de mayo de 2026",     "15 de septiembre de 2026"]
+
+    // Opciones de diplomado según carrera
+    private var diplomadoOpciones: [String] {
+        switch appViewModel.userProfile.career?.name {
+        case "Informática":
+            return ["Diplomado en BD", "Diplomado en Telecoms"]
+        case "Administración":
+            return ["Diplomado en Marketing", "Diplomado en Gestión Empresarial"]
+        case "Contaduría":
+            return ["Diplomado en Finanzas", "Diplomado en Contabilidad Fiscal"]
+        case "Negocios Internacionales":
+            return ["Diplomado en Comercio Exterior", "Diplomado en Negocios Globales"]
+        default:
+            return ["Diplomado en BD", "Diplomado en Telecoms"]
+        }
+    }
+
     var body: some View {
         if let opt = appViewModel.selectedGraduationOption {
             VStack(alignment: .leading, spacing: 12) {
                 switch opt {
-                    
+
                 case .tesis:
                     RevisionStepper(
                         label: "Número de revisiones de tesina",
                         value: $appViewModel.revisionCount
                     )
-                    
+
                 case .examenConocimientos:
-                    DateInputField(
-                        label: "Fecha límite de inscripción",
-                        placeholder: "ej. 15 de abril de 2026",
-                        text: $appViewModel.fechaInscripcion
+                    DropdownPickerField(
+                        label: "Fecha del examen",
+                        options: examenDates,
+                        selection: $appViewModel.fechaInscripcion
                     )
-                    
+
                 case .diplomado:
-                    // Agrupamos para mantener el espaciado interno
                     VStack(alignment: .leading, spacing: 12) {
-                        DateInputField(
+                        DropdownPickerField(
                             label: "Fecha límite de inscripción",
-                            placeholder: "ej. 10 de mayo de 2026",
-                            text: $appViewModel.fechaInscripcion
+                            options: diplomadoDates,
+                            selection: $appViewModel.fechaInscripcion
                         )
-                        PlaceInputField(text: $appViewModel.diplomadoLugar)
+                        DropdownPickerField(
+                            label: "Nombre del diplomado",
+                            options: diplomadoOpciones,
+                            selection: $appViewModel.diplomadoNombre
+                        )
                     }
-                    
+
                 case .promedio:
                     Label(
                         "Asegúrate de tener promedio ≥ 9.5 y ser alumno regular.",
@@ -210,28 +233,63 @@ struct ModalidadConfigSection: View {
                     )
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true) // Evita que el texto se corte
-                    
+                    .fixedSize(horizontal: false, vertical: true)
+
                 case .proyecto:
                     RevisionStepper(
                         label: "Número de revisiones del proyecto",
                         value: $appViewModel.revisionCount
                     )
                 }
-                
-                // El Spacer hace que el contenido se pegue arriba y la caja mantenga su tamaño
+
                 Spacer(minLength: 0)
             }
             .padding(14)
             .frame(maxWidth: .infinity)
-            // Ajusta este valor (130) según qué tan alto sea tu componente DateInputField + PlaceInputField
-            .frame(height: 140, alignment: .topLeading)
+            .frame(height: 160, alignment: .topLeading)
             .background(Color.blue.opacity(0.05))
             .cornerRadius(14)
-        }    }
+        }
+    }
 }
 
 // MARK: - Sub-componentes de config
+
+/// Picker estilo menú desplegable para seleccionar entre opciones fijas.
+private struct DropdownPickerField: View {
+    let label: String
+    let options: [String]
+    @Binding var selection: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Picker(label, selection: $selection) {
+                ForEach(options, id: \.self) { option in
+                    Text(option).tag(option)
+                }
+            }
+            .pickerStyle(.menu)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color.white)
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.gray.opacity(0.25), lineWidth: 1)
+            )
+            .onAppear {
+                // Auto-selecciona la primera opción si no hay valor válido
+                if selection.isEmpty || !options.contains(selection) {
+                    selection = options.first ?? ""
+                }
+            }
+        }
+    }
+}
 
 private struct RevisionStepper: View {
     let label: String
@@ -266,38 +324,6 @@ private struct RevisionStepper: View {
                 }
                 .disabled(value >= 10)
             }
-        }
-    }
-}
-
-private struct DateInputField: View {
-    let label: String
-    let placeholder: String
-    @Binding var text: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            TextField(placeholder, text: $text)
-                .textFieldStyle(.roundedBorder)
-                .submitLabel(.done)
-        }
-    }
-}
-
-private struct PlaceInputField: View {
-    @Binding var text: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Lugar de entrega de papeles")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            TextField("ej. Sala de Titulación, Edificio A", text: $text)
-                .textFieldStyle(.roundedBorder)
-                .submitLabel(.done)
         }
     }
 }

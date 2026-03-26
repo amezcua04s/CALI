@@ -100,7 +100,7 @@ struct PerfilView: View {
                         }
                         Divider().padding(.leading, 52)
                         ProfileMenuRow(icon: "arrow.counterclockwise", color: .red,
-                                       title: "Reiniciar app") {
+                                       title: "Cerrar sesión") {
                             showResetAlert = true
                         }
                     }
@@ -116,10 +116,10 @@ struct PerfilView: View {
         }
         .sheet(isPresented: $showEditProfile) { EditProfileView() }
         .sheet(isPresented: $showChecklist)   { ChecklistView() }
-        .alert("¿Reiniciar app?",
+        .alert("Cerrar sesión",
                isPresented: $showResetAlert) {
             Button("Cancelar", role: .cancel) {}
-            Button("Reiniciar", role: .destructive) { appViewModel.resetApp() }
+            Button("Confirmar", role: .destructive) { appViewModel.resetApp() }
         } message: {
             Text("Se borrarán todos tus datos y comenzará el onboarding de nuevo.")
         }
